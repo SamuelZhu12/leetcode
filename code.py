@@ -1,4 +1,4 @@
-# ¿ìÅÅ
+# å¿«æ’
 class Solution(object):
 
     def quickSort(self,nums,l,r):
@@ -24,7 +24,7 @@ class Solution(object):
         return nums
 		
 		
-# ·´×ªÁ´±í
+# åè½¬é“¾è¡¨
 class Solution(object):
     def reverseList(self, head):
         """
@@ -39,10 +39,10 @@ class Solution(object):
             head = tmp
         return pre
 		
-# ·´×ªÁ´±í2
+# åè½¬é“¾è¡¨2
 class Solution:
     def reverseBetween(self, head: ListNode, left: int, right: int) -> ListNode:
-        # ÉèÖÃ dummyNode ÊÇÕâÒ»ÀàÎÊÌâµÄÒ»°ã×ö·¨
+        # è®¾ç½® dummyNode æ˜¯è¿™ä¸€ç±»é—®é¢˜çš„ä¸€èˆ¬åšæ³•
         dummy_node = ListNode(-1)
         dummy_node.next = head
         pre = dummy_node
@@ -57,7 +57,7 @@ class Solution:
             pre.next = next
         return dummy_node.next
 
-# É¾³ıµ¹ÊıµÚn¸ö½Úµã ¼Ç×¡Òª¼ÓÍ·²¿µÄÀÁ½Úµã
+# åˆ é™¤å€’æ•°ç¬¬nä¸ªèŠ‚ç‚¹ è®°ä½è¦åŠ å¤´éƒ¨çš„æ‡’èŠ‚ç‚¹
 class Solution(object):
     def removeNthFromEnd(self, head, n):
         """
@@ -82,47 +82,47 @@ class Solution(object):
 
 
 
-# µÚk´óµÄÊı
+# ç¬¬kå¤§çš„æ•°
 class Solution:
     def findKthLargest(self, nums: List[int], k: int) -> int:
         
         def partition(arr: List[int], low: int, high: int) -> int:
-            pivot = arr[low]                                        # Ñ¡È¡×î×ó±ßÎªpivot
+            pivot = arr[low]                                        # é€‰å–æœ€å·¦è¾¹ä¸ºpivot
   
-            left, right = low, high     # Ë«Ö¸Õë
+            left, right = low, high     # åŒæŒ‡é’ˆ
             while left < right:
                 
-                while left<right and arr[right] >= pivot:          # ÕÒµ½ÓÒ±ßµÚÒ»¸ö<pivotµÄÔªËØ
+                while left<right and arr[right] >= pivot:          # æ‰¾åˆ°å³è¾¹ç¬¬ä¸€ä¸ª<pivotçš„å…ƒç´ 
                     right -= 1
-                arr[left] = arr[right]                             # ²¢½«ÆäÒÆ¶¯µ½left´¦
+                arr[left] = arr[right]                             # å¹¶å°†å…¶ç§»åŠ¨åˆ°leftå¤„
                 
-                while left<right and arr[left] <= pivot:           # ÕÒµ½×ó±ßµÚÒ»¸ö>pivotµÄÔªËØ
+                while left<right and arr[left] <= pivot:           # æ‰¾åˆ°å·¦è¾¹ç¬¬ä¸€ä¸ª>pivotçš„å…ƒç´ 
                     left += 1
-                arr[right] = arr[left]                             # ²¢½«ÆäÒÆ¶¯µ½right´¦
+                arr[right] = arr[left]                             # å¹¶å°†å…¶ç§»åŠ¨åˆ°rightå¤„
             
-            arr[left] = pivot           # pivot·ÅÖÃµ½ÖĞ¼äleft=right´¦
+            arr[left] = pivot           # pivotæ”¾ç½®åˆ°ä¸­é—´left=rightå¤„
             return left
         
         def randomPartition(arr: List[int], low: int, high: int) -> int:
-            pivot_idx = random.randint(low, high)                   # Ëæ»úÑ¡Ôñpivot
-            arr[low], arr[pivot_idx] = arr[pivot_idx], arr[low]     # pivot·ÅÖÃµ½×î×ó±ß
-            return partition(arr, low, high)                        # µ÷ÓÃpartitionº¯Êı
+            pivot_idx = random.randint(low, high)                   # éšæœºé€‰æ‹©pivot
+            arr[low], arr[pivot_idx] = arr[pivot_idx], arr[low]     # pivotæ”¾ç½®åˆ°æœ€å·¦è¾¹
+            return partition(arr, low, high)                        # è°ƒç”¨partitionå‡½æ•°
 
         def topKSplit(arr: List[int], low: int, high: int, k: int) -> int:
-            # mid = partition(arr, low, high)                   # ÒÔmidÎª·Ö¸îµã¡¾·ÇËæ»úÑ¡Ôñpivot¡¿
-            mid = randomPartition(arr, low, high)               # ÒÔmidÎª·Ö¸îµã¡¾Ëæ»úÑ¡Ôñpivot¡¿
-            if mid == k-1:                                      # µÚkĞ¡ÔªËØµÄÏÂ±êÎªk-1
-                return arr[mid]                                 #¡¾ÕÒµ½¼´·µ»Ø¡¿
+            # mid = partition(arr, low, high)                   # ä»¥midä¸ºåˆ†å‰²ç‚¹ã€ééšæœºé€‰æ‹©pivotã€‘
+            mid = randomPartition(arr, low, high)               # ä»¥midä¸ºåˆ†å‰²ç‚¹ã€éšæœºé€‰æ‹©pivotã€‘
+            if mid == k-1:                                      # ç¬¬kå°å…ƒç´ çš„ä¸‹æ ‡ä¸ºk-1
+                return arr[mid]                                 #ã€æ‰¾åˆ°å³è¿”å›ã€‘
             elif mid < k-1:
-                return topKSplit(arr, mid+1, high, k)           # µİ¹é¶ÔmidÓÒ²àÔªËØ½øĞĞÅÅĞò
+                return topKSplit(arr, mid+1, high, k)           # é€’å½’å¯¹midå³ä¾§å…ƒç´ è¿›è¡Œæ’åº
             else:
-                return topKSplit(arr, low, mid-1, k)            # µİ¹é¶Ômid×ó²àÔªËØ½øĞĞÅÅĞò
+                return topKSplit(arr, low, mid-1, k)            # é€’å½’å¯¹midå·¦ä¾§å…ƒç´ è¿›è¡Œæ’åº
         
         n = len(nums)
-        return topKSplit(nums, 0, n-1, n-k+1)                   # µÚk´óÔªËØ¼´ÎªµÚn-k+1Ğ¡ÔªËØ
+        return topKSplit(nums, 0, n-1, n-k+1)                   # ç¬¬kå¤§å…ƒç´ å³ä¸ºç¬¬n-k+1å°å…ƒç´ 
 
 
-# ÈıÊıÖ®ºÍ
+# ä¸‰æ•°ä¹‹å’Œ
 class Solution(object):
     def threeSum(self, nums):
         """
@@ -155,7 +155,7 @@ class Solution(object):
         return res
 		
 		
-# ËÄÊıÖ®ºÍ
+# å››æ•°ä¹‹å’Œ
 class Solution(object):
     def fourSum(self, nums, target):
         """
@@ -188,7 +188,7 @@ class Solution(object):
 
 
 		
-# ×î´ó×ÓĞòºÍ
+# æœ€å¤§å­åºå’Œ
 class Solution:
 
     def maxSubArray(self, nums: List[int]) -> int:ll
@@ -206,7 +206,7 @@ class Solution:
         return max(dp)
 
 
-# ÂòÈë¹ÉÆ±µÄÊ±»ú
+# ä¹°å…¥è‚¡ç¥¨çš„æ—¶æœº
 class Solution(object):
     def maxProfit(self, prices):
         """
@@ -226,7 +226,7 @@ class Solution(object):
 
 
 
-# ºÏ²¢ÓĞĞòÁ´±í
+# åˆå¹¶æœ‰åºé“¾è¡¨
 
 class Solution(object):
 
@@ -254,7 +254,7 @@ class Solution(object):
 		
 		
 		
-# ºÏ²¢·Çµİ¼õÊı×é
+# åˆå¹¶éé€’å‡æ•°ç»„
 class Solution:
     def merge(self, nums1: List[int], m: int, nums2: List[int], n: int) -> None:
         """
@@ -279,7 +279,7 @@ class Solution:
 
 
 		
-# Á½ÊıÖ®ºÍ
+# ä¸¤æ•°ä¹‹å’Œ
 class Solution(object):
     def twoSum(self, nums, target):
         """
@@ -296,7 +296,7 @@ class Solution(object):
                 else : return [i,j]
 				
 				
-# ¶ş²æÊ÷ÖĞĞò±éÀú
+# äºŒå‰æ ‘ä¸­åºéå†
 class Solution(object):
     def inorderTraversal(self, root):
         """
@@ -312,7 +312,7 @@ class Solution(object):
         traversal(root)
         return res
 
-# ¶ş²æÊ÷²ãĞò±éÀú
+# äºŒå‰æ ‘å±‚åºéå†
 class Solution(object):
     def levelOrder(self, root):
         """
@@ -330,7 +330,7 @@ class Solution(object):
         if root.left: self.level(root.left, level + 1, res)
         if root.right: self.level(root.right, level + 1, res)
 
-# ¶ş²æÊ÷×î´óÉî¶È£º
+# äºŒå‰æ ‘æœ€å¤§æ·±åº¦ï¼š
 class Solution(object):
     def maxDepth(self, root):
         """
@@ -342,7 +342,7 @@ class Solution(object):
             else : return 1 + max(traverse(root.left),traverse(root.right))
         return traverse(root)
 
-# µºÓìÊıÁ¿
+# å²›å±¿æ•°é‡
 class Solution:
     def dfs(self, grid, r, c):
         grid[r][c] = 0
@@ -367,7 +367,7 @@ class Solution:
         return num_islands
 
 
-# ×î³¤»ØÎÄ×Ó´®
+# æœ€é•¿å›æ–‡å­ä¸²
 class Solution:
     def longestPalindrome(self, s: str) -> str:
         n = len(s)
@@ -376,19 +376,19 @@ class Solution:
         
         max_len = 1
         begin = 0
-        # dp[i][j] ±íÊ¾ s[i..j] ÊÇ·ñÊÇ»ØÎÄ´®
+        # dp[i][j] è¡¨ç¤º s[i..j] æ˜¯å¦æ˜¯å›æ–‡ä¸²
         dp = [[False] * n for _ in range(n)]
         for i in range(n):
             dp[i][i] = True
         
-        # µİÍÆ¿ªÊ¼
-        # ÏÈÃ¶¾Ù×Ó´®³¤¶È
+        # é€’æ¨å¼€å§‹
+        # å…ˆæšä¸¾å­ä¸²é•¿åº¦
         for L in range(2, n + 1):
-            # Ã¶¾Ù×ó±ß½ç£¬×ó±ß½çµÄÉÏÏŞÉèÖÃ¿ÉÒÔ¿íËÉÒ»Ğ©
+            # æšä¸¾å·¦è¾¹ç•Œï¼Œå·¦è¾¹ç•Œçš„ä¸Šé™è®¾ç½®å¯ä»¥å®½æ¾ä¸€äº›
             for i in range(n):
-                # ÓÉ L ºÍ i ¿ÉÒÔÈ·¶¨ÓÒ±ß½ç£¬¼´ j - i + 1 = L µÃ
+                # ç”± L å’Œ i å¯ä»¥ç¡®å®šå³è¾¹ç•Œï¼Œå³ j - i + 1 = L å¾—
                 j = L + i - 1
-                # Èç¹ûÓÒ±ß½çÔ½½ç£¬¾Í¿ÉÒÔÍË³öµ±Ç°Ñ­»·
+                # å¦‚æœå³è¾¹ç•Œè¶Šç•Œï¼Œå°±å¯ä»¥é€€å‡ºå½“å‰å¾ªç¯
                 if j >= n:
                     break
                     
@@ -400,7 +400,7 @@ class Solution:
                     else:
                         dp[i][j] = dp[i + 1][j - 1]
                 
-                # Ö»Òª dp[i][L] == true ³ÉÁ¢£¬¾Í±íÊ¾×Ó´® s[i..L] ÊÇ»ØÎÄ£¬´ËÊ±¼ÇÂ¼»ØÎÄ³¤¶ÈºÍÆğÊ¼Î»ÖÃ
+                # åªè¦ dp[i][L] == true æˆç«‹ï¼Œå°±è¡¨ç¤ºå­ä¸² s[i..L] æ˜¯å›æ–‡ï¼Œæ­¤æ—¶è®°å½•å›æ–‡é•¿åº¦å’Œèµ·å§‹ä½ç½®
                 if dp[i][j] and j - i + 1 > max_len:
                     max_len = j - i + 1
                     begin = i
