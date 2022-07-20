@@ -22,7 +22,22 @@ class Solution(object):
 
         self.quickSort(nums,0,len(nums) - 1)
         return nums
-		
+
+# 相交链表
+class Solution(object):
+    def getIntersectionNode(self, headA, headB):
+        """
+        :type head1, head1: ListNode
+        :rtype: ListNode
+        """
+        pa = headA
+        pb = headB
+        while pa != pb:
+            if not pa: pa = headB
+            else : pa = pa.next
+            if not pb: pb = headA
+            else : pb = pb.next
+        return pa
 		
 # 反转链表
 class Solution(object):
@@ -405,3 +420,30 @@ class Solution:
                     max_len = j - i + 1
                     begin = i
         return s[begin:begin + max_len]
+
+
+# 回溯
+# 全排列
+class Solution:
+    def permute(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[List[int]]
+        """
+        def backtrack(first = 0):
+            # 所有数都填完了
+            if first == n:  
+                res.append(nums[:])
+            for i in range(first, n):
+                # 动态维护数组
+                nums[first], nums[i] = nums[i], nums[first]
+                # 继续递归填下一个数
+                backtrack(first + 1)
+                # 撤销操作
+                nums[first], nums[i] = nums[i], nums[first]
+        
+        n = len(nums)
+        res = []
+        backtrack()
+        return res
+
