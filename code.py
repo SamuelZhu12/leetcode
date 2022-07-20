@@ -456,10 +456,9 @@ class Solution:
                 # 继续递归填下一个数
                 backtrack(first + 1)
                 # 撤销操作
-                nums[first], nums[i] = nums[i], nums[first]
+                nums[first], nums[i] = nums[i], nums[first] # 保留 first-1 的状态
         
         n = len(nums)
         res = []
         backtrack()
         return res
-
