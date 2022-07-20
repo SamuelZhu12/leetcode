@@ -71,7 +71,23 @@ class Solution:
             next.next = pre.next
             pre.next = next
         return dummy_node.next
+# 相交链表
 
+class Solution(object):
+    def getIntersectionNode(self, headA, headB):
+        """
+        :type head1, head1: ListNode
+        :rtype: ListNode
+        """
+        pa = headA
+        pb = headB
+        while pa != pb:
+            if not pa: pa = headB
+            else : pa = pa.next
+            if not pb: pb = headA
+            else : pb = pb.next
+        return pa
+		
 # 删除倒数第n个节点 记住要加头部的懒节点
 class Solution(object):
     def removeNthFromEnd(self, head, n):
