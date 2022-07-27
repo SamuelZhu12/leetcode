@@ -13,7 +13,7 @@
 
 ## 2.架构
 
-<img src="C:\Users\56268\Desktop\note\MySQL.assets\a762bd56e189af35e0cfd896a595efb1.png" alt="img" style="zoom:80%;" />
+<img src=".\MySQL.assets\a762bd56e189af35e0cfd896a595efb1.png" alt="img" style="zoom:80%;" />
 
 ### 2.1 连接层
 最上层是一些客户端和连接服务，包含本地sock通信和大多数基于客户端/服务端工具实现的类似于tcp/ip的通信。主要完成一些类似于连接处理、授权认证、及相关的安全方案。在该层上引入了线程池的概念，为通过认证安全接入的客户端提供线程。同样在该层上可以实现基于SSL的安全链接。服务器也会为安全接入的每个客户端验证它所具有的操作权限
@@ -58,13 +58,13 @@
 
 在谈论B树之前，先看看红黑树
 
-![img](C:\Users\56268\Desktop\note\MySQL.assets\1.png)
+![img](.\MySQL.assets\1.png)
 
 上图展示了一种可能的索引方式，左表是数据表，col1是数据的物理地址（逻辑上地址相邻不代表磁盘上物理相邻），而为了加快col2的索引键值查找，可以维护一个右边所示的平衡二叉树（AVL），每个节点分别包含索引键值和一个指向对应数据记录物理地址的指针，这样可以利用二叉寻找在$O(log_2n)$的复杂度内获得相应数据。
 
 但实际的数据库系统中几乎没有使用这种二叉查找树或者进化品种**红黑树**实现的。
 
-<img src="C:\Users\56268\Desktop\note\MySQL.assets\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTQ0NTQ1Mzg=,size_16,color_FFFFFF,t_70-16588514685819.png" alt="在这里插入图片描述" style="zoom:67%;" />
+<img src=".\MySQL.assets\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTQ0NTQ1Mzg=,size_16,color_FFFFFF,t_70-16588514685819.png" alt="在这里插入图片描述" style="zoom:67%;" />
 
 **红黑规则**：
 
@@ -91,7 +91,7 @@
 
 **B树的定义**：
 
-![在这里插入图片描述](C:\Users\56268\Desktop\note\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16.png)
+![在这里插入图片描述](.\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16.png)
 
 - 每个节点最多有m-1个关键字（可以存有的键值对）。
 
@@ -110,7 +110,7 @@
 
 ### 3.3 B+树
 
-![img](C:\Users\56268\Desktop\note\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16-165885172863011.png)
+![img](.\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16-165885172863011.png)
 
 B+树是B树的一种变种，其区别在于：
 
