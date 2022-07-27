@@ -25,7 +25,7 @@
 
 ​	SQL接口。接受用户的SQL命令，并且返回用户需要查询的结果。比如select from就是调用SQL Interface
 
-2. **Parser（解析器）**
+2. **Parser(解析器)**
 
    1. SQL命令传递到解析器的时候会被解析器验证和解析。解析器是由Lex和YACC实现的，是一个很长的脚本。
    2. 在 MySQL中我们习惯将所有 Client 端发送给 Server 端的命令都称为 Query，在 MySQL Server 里面，连接线程接收到客户端的一个 Query 后，会直接将该 Query 传递给专门负责将各种 Query 进行分类然后转发给各个对应的处理模块。
@@ -57,14 +57,13 @@
 ### 3.2 B树（B-树）
 
 在谈论B树之前，先看看红黑树
-
-![img](.\MySQL.assets\1.png)
+<img src=".\MySQL.assets\1.png" alt="img" style="zoom:80%;" />
 
 上图展示了一种可能的索引方式，左表是数据表，col1是数据的物理地址（逻辑上地址相邻不代表磁盘上物理相邻），而为了加快col2的索引键值查找，可以维护一个右边所示的平衡二叉树（AVL），每个节点分别包含索引键值和一个指向对应数据记录物理地址的指针，这样可以利用二叉寻找在$O(log_2n)$的复杂度内获得相应数据。
 
 但实际的数据库系统中几乎没有使用这种二叉查找树或者进化品种**红黑树**实现的。
 
-<img src=".\MySQL.assets\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTQ0NTQ1Mzg=,size_16,color_FFFFFF,t_70-16588514685819.png" alt="在这里插入图片描述" style="zoom:67%;" />
+<img src=".\MySQL.assets\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTQ0NTQ1Mzg=,size_16,color_FFFFFF,t_70-16588514685819.png" alt="img" style="zoom:80%;" />
 
 **红黑规则**：
 
@@ -91,7 +90,7 @@
 
 **B树的定义**：
 
-![在这里插入图片描述](.\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16.png)
+<img src=".\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16.png" alt="img" style="zoom:80%;" />
 
 - 每个节点最多有m-1个关键字（可以存有的键值对）。
 
@@ -110,7 +109,7 @@
 
 ### 3.3 B+树
 
-![img](.\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16-165885172863011.png)
+<img src=".\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16-165885172863011.png" alt="img" style="zoom:80%;" />
 
 B+树是B树的一种变种，其区别在于：
 
