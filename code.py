@@ -22,8 +22,8 @@ class Solution(object):
 
         self.quickSort(nums,0,len(nums) - 1)
         return nums
-
-# 相交链表
+# 链表
+## 相交链表
 class Solution(object):
     def getIntersectionNode(self, headA, headB):
         """
@@ -39,7 +39,7 @@ class Solution(object):
             else : pb = pb.next
         return pa
 		
-# 反转链表
+## 反转链表
 class Solution(object):
     def reverseList(self, head):
         """
@@ -54,7 +54,7 @@ class Solution(object):
             head = tmp
         return pre
 		
-# 反转链表2
+## 反转链表2
 class Solution:
     def reverseBetween(self, head: ListNode, left: int, right: int) -> ListNode:
         # 设置 dummyNode 是这一类问题的一般做法
@@ -71,24 +71,24 @@ class Solution:
             next.next = pre.next
             pre.next = next
         return dummy_node.next
-# 相交链表
-
-class Solution(object):
-    def getIntersectionNode(self, headA, headB):
+		
+## 删除链表指定值的节点
+    def removeElements(self, head, val):
         """
-        :type head1, head1: ListNode
+        :type head: ListNode
+        :type val: int
         :rtype: ListNode
         """
-        pa = headA
-        pb = headB
-        while pa != pb:
-            if not pa: pa = headB
-            else : pa = pa.next
-            if not pb: pb = headA
-            else : pb = pb.next
-        return pa
-		
-# 删除倒数第n个节点 记住要加头部的懒节点
+        dummy = ListNode(0,head)
+        cur = dummy
+        while cur.next:		# 防止cur遍历到尾节点 
+            if cur.next.val == val:
+                cur.next = cur.next.next
+            else:
+                cur = cur.next
+        return dummy.next
+
+## 删除倒数第n个节点 记住要加头部的懒节点
 class Solution(object):
     def removeNthFromEnd(self, head, n):
         """
@@ -327,7 +327,8 @@ class Solution(object):
                 else : return [i,j]
 				
 				
-# 二叉树中序遍历
+# 二叉树
+## 二叉树中序遍历
 class Solution(object):
     def inorderTraversal(self, root):
         """
@@ -343,25 +344,97 @@ class Solution(object):
         traversal(root)
         return res
 
-# 二叉树层序遍历
+## 二叉树层序遍历
+### 递归法
 class Solution(object):
     def levelOrder(self, root):
         """
         :type root: TreeNode
         :rtype: List[List[int]]
         """
+          def func(root,level):
+            if not root:
+                return []
+            if len(res) == level: # 遍历到第i层第一个节点，就为该层扩充一个[]，如果访问到第i层第2个节点，则不扩充
+                res.append([])
+            res[level].append(root.val) 
+            if root.left: func(root.left,level+1)
+            if root.right: func(root.right,level+1)
+        func(root,0)
+        return res
+### 迭代法
+class Solution(object):
+    def levelOrder(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[List[int]]
+        """
+        if not root:
+            return []
+        # 存储节点的双向队列
+        nodeQue = deque([root])
+        results = []
+        while nodeQue: # 当节点队列不为空时
+            res = []
+            for i in range(len(nodeQue)): # 遍历存储该层节点的队列
+                cur = nodeQue.popleft()
+                res.append(cur.val)
+                if cur.left: nodeQue.append(cur.left)
+                if cur.right: nodeQue.append(cur.right)
+            results.append(res)
+        return results
+
+## 二叉树锯齿形层序遍历
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution(object):
+    def zigzagLevelOrder(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[List[int]]
+        """
+        if not root: return []
+        nodeQue = deque([root])
+        results = []
+        flag= 0
+        while nodeQue:
+            res = []
+            size = len(nodeQue)
+            for i in range(size):
+                cur = nodeQue.popleft()
+                if flag % 2 == 0:  # 仅有此处跟二叉树层序遍历不同
+                    res.append(cur.val) # 列表前后插入
+                else:res.insert(0,cur.val)
+                if cur.left:nodeQue.append(cur.left)
+                if cur.right:nodeQue.append(cur.right)
+            flag += 1
+            results.append(res)
+        return results
+
+## 二叉树右视图
+class Solution(object):
+    def rightSideView(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[int]
+        """
+        if not root: return []
+        nodeQue = deque([root])
         res = []
-        self.level(root, 0, res)
+        while nodeQue:
+            size = len(nodeQue)
+            for i in range(size):
+                if i == 0: res.append(nodeQue[-1].val)
+                cur = nodeQue.popleft()
+                if cur.left: nodeQue.append(cur.left)
+                if cur.right: nodeQue.append(cur.right)
         return res
 
-    def level(self, root, level, res):
-        if not root: return
-        if len(res) == level: res.append([])
-        res[level].append(root.val)
-        if root.left: self.level(root.left, level + 1, res)
-        if root.right: self.level(root.right, level + 1, res)
-
-# 二叉树最大深度：
+## 二叉树最大深度：
 class Solution(object):
     def maxDepth(self, root):
         """
@@ -462,3 +535,146 @@ class Solution:
         res = []
         backtrack()
         return res
+
+# 带有target的组合 如[2,2,2,3]之和等于7的所有组合
+class Solution(object):
+    def combinationSum(self, candidates, target):
+        """
+        :type candidates: List[int]
+        :type target: int
+        :rtype: List[List[int]]
+        """
+        def backtracking(target, n, first, candidates):
+            if target == 0:
+                res.append(path[:])
+                return
+            if target < 0:
+                return
+            for i in range(first, n):
+                path.append(candidates[i])
+                backtracking(target - candidates[i], n, i, candidates)
+                path.pop()
+        res = []
+        path = []
+        n = len(candidates)
+        backtracking(target, n, 0, candidates)
+        return res
+
+
+# 动态规划
+## 带障碍的路径规划
+class Solution(object):
+    def uniquePathsWithObstacles(self, obstacleGrid):
+        """
+        :type obstacleGrid: List[List[int]]
+        :rtype: int
+        """
+        m = len(obstacleGrid)
+        n = len(obstacleGrid[0])
+		# 初始化为0
+        dp = [[0 for _ in range(n)] for _ in range(m)]
+        if obstacleGrid[0][0] == 1:
+            return 0
+        else: dp[0][0] = 1
+		# 第一行第一列的初始化，如果有障碍，则后面的dp数组置为0
+        for i in range(1,n):
+            if obstacleGrid[0][i] != 1:
+                dp[0][i] = dp[0][i-1]
+        for i in range(1,m):
+            if obstacleGrid[i][0] != 1:
+                dp[i][0] = dp[i-1][0]
+        for i in range(1,m):
+            for j in range(1,n):
+                if obstacleGrid[i][j] != 1:
+                    dp[i][j] = dp[i-1][j] + dp[i][j-1]
+
+        return dp[m-1][n-1]
+		
+## 爬楼梯
+class Solution(object):
+    def climbStairs(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        dp = [0 for i in range(n+1)]
+        dp[0] = 1
+        dp[1] = 1
+        for i in range(2,n+1):
+            dp[i] = dp[i-1] + dp[i-2]
+        return dp[n]
+		
+## 拆分两数
+class Solution:
+    def integerBreak(self, n: int) -> int:
+        dp = [0] * (n + 1)
+        dp[2] = 1
+        for i in range(3, n + 1):
+            # 假设对正整数 i 拆分出的第一个正整数是 j（1 <= j < i），则有以下两种方案：
+            # 1) 将 i 拆分成 j 和 i−j 的和，且 i−j 不再拆分成多个正整数，此时的乘积是 j * (i-j)
+            # 2) 将 i 拆分成 j 和 i−j 的和，且 i−j 继续拆分成多个正整数，此时的乘积是 j * dp[i-j]
+            for j in range(1, i - 1):
+                dp[i] = max(dp[i], max(j * (i - j), j * dp[i - j]))
+        return dp[n]
+
+## 搜索二叉树数量
+    def numTrees(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        ## 找到递推公式是关键，3的顶点包括1、2的形式，4的顶点包括1、2、3的形式
+        dp = [0 for _ in range(n+1)]
+        dp[0] = 1
+        for i in range(1,n+1):
+            for j in range(1,i+1):
+                dp[i] += dp[j-1]*dp[i-j]
+
+        return dp[n]
+		
+		
+# dfs岛屿问题
+class Solution(object):
+    def numIslands(self, grid):
+        """
+        :type grid: List[List[str]]
+        :rtype: int
+        """
+        def dfs(grid,i,j):
+            if not 0 <= i < len(grid) or not 0 <= j < len(grid[0]) or grid[i][j] == '0': return
+            grid[i][j] = '0'
+            dfs(grid,i+1,j)
+            dfs(grid,i,j+1)
+            dfs(grid,i-1,j)
+            dfs(grid,i,j-1)
+        m = len(grid)
+        n = len(grid[0])
+        count = 0
+        for i in range(m):
+            for j in range(n):
+                if grid[i][j] == '1':
+                    dfs(grid,i,j)
+                    count += 1
+        return count
+
+# 岛屿周长
+class Solution(object):
+    def islandPerimeter(self, grid):
+        """
+        :type grid: List[List[int]]
+        :rtype: int
+        """
+        m = len(grid)
+        n = len(grid[0])
+        count = 0
+        edge = 0
+        for i in range(m):
+            for j in range(n):
+                if grid[i][j] == 1:
+                    count += 1
+                    if j+1 < n and grid[i][j+1] == 1:
+                        edge += 1
+                    if i+1 < m and grid[i+1][j] == 1:
+                        edge += 1
+        return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
+                
