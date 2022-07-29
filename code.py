@@ -352,7 +352,7 @@ class Solution(object):
         :type root: TreeNode
         :rtype: List[List[int]]
         """
-          def func(root,level):
+        def func(root,level):
             if not root:
                 return []
             if len(res) == level: # 遍历到第i层第一个节点，就为该层扩充一个[]，如果访问到第i层第2个节点，则不扩充
@@ -385,12 +385,6 @@ class Solution(object):
         return results
 
 ## 二叉树锯齿形层序遍历
-# Definition for a binary tree node.
-# class TreeNode(object):
-#     def __init__(self, val=0, left=None, right=None):
-#         self.val = val
-#         self.left = left
-#         self.right = right
 class Solution(object):
     def zigzagLevelOrder(self, root):
         """
@@ -445,6 +439,44 @@ class Solution(object):
             if not root: return 0
             else : return 1 + max(traverse(root.left),traverse(root.right))
         return traverse(root)
+
+## 二叉树最小深度
+class Solution:
+    def minDepth(self, root: TreeNode) -> int:
+        if not root:
+            return 0
+
+        if not root.left and not root.right:
+            return 1
+
+        min_depth = 10 ** 9
+        if root.left:
+            min_depth = min(self.minDepth(root.left), min_depth)
+        if root.right:
+            min_depth = min(self.minDepth(root.right), min_depth)
+
+        return min_depth + 1
+
+## 迭代法的最小深度
+class Solution:
+    def minDepth(self, root: TreeNode) -> int:
+        if root == None:
+            return 0
+
+        # 根节点的深度为1
+        queue_ = [(root, 1)]
+        while queue_:
+            cur, depth = queue_.pop(0)
+
+            if cur.left == None and cur.right == None:
+                return depth
+            # 先左子节点，由于左子节点没有孩子，则就是这一层了
+            if cur.left:
+                queue_.append((cur.left, depth + 1))
+            if cur.right:
+                queue_.append((cur.right, depth + 1))
+
+        return 0
 
 # 岛屿数量
 class Solution:
