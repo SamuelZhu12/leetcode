@@ -108,7 +108,7 @@
 
 ### 3.3 B+树
 
-<img src=".\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16-165885172863011.png" alt="img" style="zoom:80%;" />
+<img src="../NOTE\MySQL.assets\watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBASmF2YVB1Yi1yb2RlcnQ=,size_19,color_FFFFFF,t_70,g_se,x_16-165885172863011.png" alt="img" style="zoom:80%;" />
 
 B+树是B树的一种变种，其区别在于：
 
