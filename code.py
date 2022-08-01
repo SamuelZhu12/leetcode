@@ -1,27 +1,102 @@
-# 快排
+# 排序
+## 快排
 class Solution(object):
-
-    def quickSort(self,nums,l,r):
-        if(l >= r): return
-        i = l
-        j = r
-        tmp = nums[l]
-        while i < j:
-            while i<j and nums[j] >= tmp: j -= 1
-            nums[i] = nums[j]
-            while i<j and nums[i] <= tmp: i += 1
-            nums[j] = nums[i]
-            nums[i] = tmp
-        self.quickSort(nums,l,i-1)
-        self.quickSort(nums,i+1,r)
     def sortArray(self, nums):
         """
         :type nums: List[int]
         :rtype: List[int]
         """
+        def quicksort(nums,l,r):
+            if l >= r:
+                return 
+            # 随机选择一个pivot
+            index = random.randint(l, r)
+            pivot = nums[index]
+            #将pivot换到最左端
+            nums[l],nums[index] = nums[index],nums[l]
+            i,j = l,r
+            while i < j:
+                while i < j and nums[j] >= pivot:
+                    j -= 1 
+                while i < j and nums[i] <= pivot:
+                    i += 1
+                if i != j:
+                    # 未重合时交换元素
+                    nums[i],nums[j] = nums[j],nums[i]
+            #将最左端的pivot放置i与j重合的地方
+            nums[l],nums[i] = nums[i],nums[l]
 
-        self.quickSort(nums,0,len(nums) - 1)
+            quicksort(nums,l,i-1)
+            quicksort(nums,i+1,r)
+        quicksort(nums,0,len(nums) - 1)
         return nums
+
+## 归并排序
+class Solution(object):
+    def sortArray(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        def merge_sort(nums, l, r):
+            if l == r:
+                return
+            mid = (l + r) // 2
+			# 最上面一层递归的结果是数组nums[l:mid+1]（左端点为l,右端点为mid）和nums[mid+1:r+1]（左端点为mid+1,右端点为r）两个有序数组的合并
+            merge_sort(nums, l, mid)
+            merge_sort(nums, mid + 1, r)
+            tmp = []
+            i, j = l, mid + 1 # 设置左端点
+            while i <= mid and j <= r:
+                if nums[j] < nums[i]:
+                    tmp.append(nums[j])
+                    j += 1
+                else:
+                    tmp.append(nums[i])
+                    i += 1
+            if i > mid: #连接未访问的有序数组元素
+                tmp = tmp + nums[j:r+1]
+            elif j > r:
+                tmp = tmp + nums[i:mid+1]
+            nums[l:r+1] = tmp # 合并两个数组
+        merge_sort(nums, 0, len(nums) - 1)
+        return nums
+
+## 堆排序
+class Solution(object):
+    def sortArray(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        # 大根堆排序
+        # 根节点是0开始
+        def maxheap(nums,index,end):
+            # 访问index的子节点
+            j = 2*index + 1
+            while j <= end:
+                # 选择index 较大的那个子节点
+                if j <= end-1 and nums[j] < nums[j+1]:
+                    j += 1
+                # 如果该节点值小于最大子节点，则交换，让最大子节点作为根节点
+                if j <= end and nums[index] < nums[j]:
+                    nums[index],nums[j] = nums[j],nums[index]
+                # 遍历到子节点
+                    index = j
+                    j = 2*index + 1
+                else:
+                    break 
+        # 从下到上构建大根堆，找到最后一个非叶子节点 n//2 + 1
+        n = len(nums)
+        for i in range(n//2 + 1,-1,-1):
+            maxheap(nums,i,n-1)
+        # 遍历完以后已经构建出了大根堆,从上到下下沉，交换0和j，并且重新构建除去j的大根堆
+        for j in range(n-1,-1,-1):
+            nums[0],nums[j] = nums[j],nums[0]
+            maxheap(nums,0,j-1)
+        return nums
+            
+
 # 链表
 ## 相交链表
 class Solution(object):
@@ -286,27 +361,23 @@ class Solution(object):
 		
 		
 # 合并非递减数组
-class Solution:
-    def merge(self, nums1: List[int], m: int, nums2: List[int], n: int) -> None:
-        """
-        Do not return anything, modify nums1 in-place instead.
-        """
-        sorted = []
-        p1, p2 = 0, 0
-        while p1 < m or p2 < n:
-            if p1 == m:
-                sorted.append(nums2[p2])
-                p2 += 1
-            elif p2 == n:
-                sorted.append(nums1[p1])
-                p1 += 1
-            elif nums1[p1] < nums2[p2]:
-                sorted.append(nums1[p1])
-                p1 += 1
+    def merge(self, nums1, m, nums2, n):
+        tmp = []
+        i = 0
+        j = 0
+        while i < m and j < n:
+            if nums1[i] < nums2[j]:
+                tmp.append(nums1[i])
+                i += 1
             else:
-                sorted.append(nums2[p2])
-                p2 += 1
-        nums1[:] = sorted
+                tmp.append(nums2[j])
+                j += 1
+        if i == m:
+            tmp = tmp + nums2[j:]
+        elif j == n:
+            tmp = tmp + nums1[i:m]
+        nums1[:] = tmp
+        return nums1
 
 
 		
