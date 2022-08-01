@@ -186,7 +186,48 @@ class Solution(object):
         cur.next = cur.next.next
         return dummy.next
 
-
+## 链表排序（用到了归并排序思想）
+class Solution:
+    def sortList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        def sortFunc(head,tail):
+            # 控制好递归出口
+            if not head:
+                return head
+            # 最底层：
+            # 当链表只剩下两个节点的时候，head.next = tail，此时将head断开，链表1是head，链表2是mid，进行Merge排序
+            # 以此类推...
+            if head.next == tail:
+                head.next = None
+                return head
+            #找出中间节点
+            fast = head
+            slow = head
+            # fast每次移动两个节点，slow每次移动一个节点
+            while fast != tail:
+                fast = fast.next
+                slow = slow.next
+                if fast != tail:
+                    fast = fast.next
+            mid = slow
+            return merge(sortFunc(head,mid),sortFunc(mid,tail))
+        # 合并两个有序链表
+        def merge(head1,head2):
+            tmp = ListNode(0)
+            res,cur1,cur2 = tmp,head1,head2
+            while cur1 and cur2:
+                if cur1.val > cur2.val:
+                    res.next = cur2
+                    cur2 = cur2.next
+                else:
+                    res.next = cur1
+                    cur1 = cur1.next
+                res = res.next
+            if cur1:
+                res.next = cur1
+            elif cur2:
+                res.next = cur2
+            return tmp.next
+        return sortFunc(head, None)
 
 # 第k大的数
 class Solution:
@@ -781,3 +822,80 @@ class Solution(object):
                         edge += 1
         return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
                 
+class Solution:
+    def sortList(self, head: ListNode) -> ListNode:
+        def sortFunc(head: ListNode, tail: ListNode) -> ListNode:
+            if not head:
+                return head
+            if head.next == tail:
+                head.next = None
+                return head
+            slow = fast = head
+            while fast != tail:
+                slow = slow.next
+                fast = fast.next
+                if fast != tail:
+                    fast = fast.next
+            mid = slow
+            return merge(sortFunc(head, mid), sortFunc(mid, tail))
+            
+        def merge(head1: ListNode, head2: ListNode) -> ListNode:
+            dummyHead = ListNode(0)
+            temp, temp1, temp2 = dummyHead, head1, head2
+            while temp1 and temp2:
+                if temp1.val <= temp2.val:
+                    temp.next = temp1
+                    temp1 = temp1.next
+                else:
+                    temp.next = temp2
+                    temp2 = temp2.next
+                temp = temp.next
+            if temp1:
+                temp.next = temp1
+            elif temp2:
+                temp.next = temp2
+            return dummyHead.next
+        
+        return sortFunc(head, None)
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def sortList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        def sortFunc(head,tail):
+            if not head:
+                return head
+            if head.next == tail:
+                head.next = None
+                return head
+            #找出中间节点
+            fast = head
+            slow = head
+            # fast每次移动两个节点，slow每次移动一个节点
+            while fast != tail:
+                slow = slow.next
+                fast = fast.next
+                if fast != tail:
+                    fast = fast.next
+            mid = slow
+            return merge(sortFunc(head,mid),merge(mid,tail))
+        def merge(head1,head2):
+            tmp = ListNode(0)
+            res,cur1,cur2 = tmp,head1,head2
+            while cur1 and cur2:
+                if cur1.val > cur2.val:
+                    res.next = cur2
+                    cur2 = cur2.next
+                else:
+                    res.next = cur1
+                    cur1 = cur1.next
+                res = res.next
+            if cur1:
+                res.next = cur1
+            elif cur2:
+                res.next = cur2
+            return tmp.next
+        return sortFunc(head, None)
