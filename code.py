@@ -1,4 +1,5 @@
-# 快排
+#  排序
+## 快排
 class Solution(object):
 
     def quickSort(self,nums,l,r):
@@ -22,6 +23,10 @@ class Solution(object):
 
         self.quickSort(nums,0,len(nums) - 1)
         return nums
+        
+
+
+
 # 链表
 ## 相交链表
 class Solution(object):
