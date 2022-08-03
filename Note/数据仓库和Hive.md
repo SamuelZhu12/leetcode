@@ -829,3 +829,324 @@ set hive.merge.smallfiles.avgsize=16000000
 /* 通过distribute by 进行文件合并，一般基于分区字段*/
 insert overwrite table test [partition(hour=...)] select * from test distribute by floor (rand()*5);
 ```
+
+## 8. Hive场景代码
+
+### 1. 最大连续登陆x天
+
+```
+连续登陆问题一般转化为等差数列问题
+```
+
+- 按照用户的loadtime进行排序
+
+![image-20211222112032941](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208031507933.png)
+
+```hive
+步骤一 使用ROW_NUMBER() 窗口函数 按用户id(uid)分组，按登陆日期(loadtime)升序排
+
+select
+  UID,
+  loadtime,
+  row_number() over(
+    partition by UID
+    order by
+      loadtime
+  ) sort
+from
+  user_login
+```
+
+![image-20211222112443002](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208031510908.png)
+
+- 判断是否连续
+
+```hive
+/*用date减去sort，如果连续则差值一样，然后按照uid和login_group分组计算连续的天数*/
+
+select
+  UID,
+  date_sub(loadtime, sort) as date_group,
+  min(loadtime) as start,
+  max(loadtime) as end,
+count(1) as continue_days from (
+  select
+    UID,
+    loadtime,
+    row_number() over(
+      partition by UID
+      order by
+        loadtime
+    ) sort
+  from
+    user_login
+) a
+group by
+  UID,
+  date_sub(loadtime, sort)
+```
+
+![image-20211222112640484](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208031511300.png)
+
+- 求最大连续登陆天数
+
+```hive
+/*以UID分组，取max(continue_days)*/
+
+select
+  UID,
+  max(continue_days) as maxday (
+    select
+      UID,
+      date_sub(loadtime, sort) as date_group,
+      min(loadtime) as start,
+      max(loadtime) as
+  end,
+  count(1) as continue_days  (
+    select
+      UID,
+      loadtime,
+      row_number() over(
+        partition by UID
+        order by
+          loadtime
+      ) sort
+    from
+      user_login
+  ) a
+group by
+  UID,
+  date_sub(loadtime, sort)
+) b
+group by
+  UID
+```
+
+### 2. 连续登陆x天，空x天也算
+
+```
+连续登陆问题一般转化为等差数列+lag +sumif+重新分组
+```
+
+- #### 样例数据
+
+  ```
+  -- tx 表
+  id      login
+  id001	2021-01-01
+  id001	2021-01-02
+  id001	2021-01-03
+  id001	2021-01-05
+  id001	2021-01-07
+  id001	2021-01-08
+  id001	2021-01-15
+  id001	2021-01-16
+  ```
+
+步骤一：
+```hive
+-- 步骤一 使用ROW_NUMBER() 窗口函数 按用户id(uid)分组，按登陆日期(loadtime)升序排+lag函数
+-- t1 表
+with tx as (
+  SELECT 'id001' as id,'2021-01-01' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-02' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-03' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-05' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-07' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-08' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-15' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-16' as login
+)
+-- lag函数，取lag函数偏移第二个参数的值作为新的一列
+select
+  id,
+  login,
+  lag(login, 1, '1970-01-01') over (
+    partition by id
+    order by
+      login
+  ) laglogin
+from
+  tx
+```
+
+输出结果：
+```
+-- t1 表
+id    login       laglogin
+id001	2021-01-01	1970-01-01
+id001	2021-01-02	2021-01-01
+id001	2021-01-03	2021-01-02
+id001	2021-01-05	2021-01-03
+id001	2021-01-07	2021-01-05
+id001	2021-01-08	2021-01-07
+id001	2021-01-15	2021-01-08
+id001	2021-01-16	2021-01-15
+```
+
+步骤二：
+```hive
+t1 as (
+  select
+    id,
+    login,
+    lag(login, 1, '1970-01-01') over (
+      partition by id
+      order by
+        login
+    ) laglogin
+  from
+    tx
+)
+select
+  id,
+  login,
+  datediff(login, laglogin) flag
+from
+  t1
+```
+
+输出结果：
+
+```
+-- t2 表
+id    login       laglogin    flag
+id001	2021-01-01	1970-01-01  18628
+id001	2021-01-02	2021-01-01  1
+id001	2021-01-03	2021-01-02  1
+id001	2021-01-05	2021-01-03  2 
+id001	2021-01-07	2021-01-05  2
+id001	2021-01-08	2021-01-07  1
+id001	2021-01-15	2021-01-08  7
+id001	2021-01-16	2021-01-15  1
+```
+
+步骤三：
+
+
+```hive
+-- 给每一行做标记，上一步的结果大于2的标记为1，否则标记为0，然后sum求和
+
+with t1 as (
+  select
+    id,
+    login,
+    lag(login, 1, '1970-01-01') over (
+      partition by id
+      order by
+        login
+    ) laglogin
+  from
+    tx
+),
+t2 as (
+select
+  id,
+  login,
+  datediff(login, laglogin) flag
+from
+  t1
+)
+select
+   id,
+   login,
+   sum(if(flag > 2,1,0)) over (partition by id order by login) groupsum
+from t2
+```
+
+输出结果：
+
+```
+-- t3 表
+id    login       groupsum    
+id001	2021-01-01	1
+id001	2021-01-02	1
+id001	2021-01-03	1
+id001	2021-01-05	1
+id001	2021-01-07	1
+id001	2021-01-08	1
+id001	2021-01-15	2
+id001	2021-01-16	2
+```
+
+步骤四：
+
+```hive
+-- 按照id，groupsum分组，并且使用最大日期减去最小日期+1
+with tx as (
+
+  SELECT 'id001' as id,'2021-01-01' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-02' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-03' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-05' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-07' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-08' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-15' as login
+  UNION ALL
+  SELECT 'id001' as id,'2021-01-16' as login
+
+),
+t1 as (
+  select
+    id,
+    login,
+    lag(login, 1, '1970-01-01') over (
+      partition by id
+      order by
+        login
+    ) laglogin
+  from
+    tx
+),
+t2 as (
+  select
+    id,
+    login,
+    datediff(login, laglogin) flag
+  from
+    t1
+),
+t3 as (
+  select
+    id,
+    login,
+    sum(if(flag > 2, 1, 0)) over (
+      partition by id
+      order by
+        login
+    ) groupsum
+  from
+    t2
+)
+select
+  id,
+  groupsum,
+  datediff(max(login), min(login)) + 1 as days
+from
+  t3
+group by
+  id,
+  groupsum
+```
+
+输出结果：
+
+```
+-- 结果表
+id    groupsum       days    
+id001	1	             8
+id001	2	             2
+```
