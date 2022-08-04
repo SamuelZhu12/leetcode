@@ -1,4 +1,7 @@
+[TOC]
+
 #  排序
+
 ## 快排
 ```python
 class Solution(object):
@@ -100,6 +103,47 @@ class Solution(object):
             maxheap(nums,0,j-1)
         return nums
 ```
+## 第k大的数
+```python
+class Solution:
+    def findKthLargest(self, nums: List[int], k: int) -> int:
+        
+        def partition(arr: List[int], low: int, high: int) -> int:
+            pivot = arr[low]                                        # 选取最左边为pivot
+      
+            left, right = low, high     # 双指针
+            while left < right:
+                
+                while left<right and arr[right] >= pivot:          # 找到右边第一个<pivot的元素
+                    right -= 1
+                arr[left] = arr[right]                             # 并将其移动到left处
+                
+                while left<right and arr[left] <= pivot:           # 找到左边第一个>pivot的元素
+                    left += 1
+                arr[right] = arr[left]                             # 并将其移动到right处
+            
+            arr[left] = pivot           # pivot放置到中间left=right处
+            return left
+        
+        def randomPartition(arr: List[int], low: int, high: int) -> int:
+            pivot_idx = random.randint(low, high)                   # 随机选择pivot
+            arr[low], arr[pivot_idx] = arr[pivot_idx], arr[low]     # pivot放置到最左边
+            return partition(arr, low, high)                        # 调用partition函数
+    
+        def topKSplit(arr: List[int], low: int, high: int, k: int) -> int:
+            # mid = partition(arr, low, high)                   # 以mid为分割点【非随机选择pivot】
+            mid = randomPartition(arr, low, high)               # 以mid为分割点【随机选择pivot】
+            if mid == k-1:                                      # 第k小元素的下标为k-1
+                return arr[mid]                                 #【找到即返回】
+            elif mid < k-1:
+                return topKSplit(arr, mid+1, high, k)           # 递归对mid右侧元素进行排序
+            else:
+                return topKSplit(arr, low, mid-1, k)            # 递归对mid左侧元素进行排序
+        
+        n = len(nums)
+        return topKSplit(nums, 0, n-1, n-k+1)                   # 第k大元素即为第n-k+1小元素
+```
+
 # 链表
 ## 相交链表
 ```python
@@ -241,48 +285,41 @@ class Solution:
             return tmp.next
         return sortFunc(head, None)
 ```
-```python
-# 第k大的数
-class Solution:
-    def findKthLargest(self, nums: List[int], k: int) -> int:
-        
-        def partition(arr: List[int], low: int, high: int) -> int:
-            pivot = arr[low]                                        # 选取最左边为pivot
-      
-            left, right = low, high     # 双指针
-            while left < right:
-                
-                while left<right and arr[right] >= pivot:          # 找到右边第一个<pivot的元素
-                    right -= 1
-                arr[left] = arr[right]                             # 并将其移动到left处
-                
-                while left<right and arr[left] <= pivot:           # 找到左边第一个>pivot的元素
-                    left += 1
-                arr[right] = arr[left]                             # 并将其移动到right处
-            
-            arr[left] = pivot           # pivot放置到中间left=right处
-            return left
-        
-        def randomPartition(arr: List[int], low: int, high: int) -> int:
-            pivot_idx = random.randint(low, high)                   # 随机选择pivot
-            arr[low], arr[pivot_idx] = arr[pivot_idx], arr[low]     # pivot放置到最左边
-            return partition(arr, low, high)                        # 调用partition函数
-    
-        def topKSplit(arr: List[int], low: int, high: int, k: int) -> int:
-            # mid = partition(arr, low, high)                   # 以mid为分割点【非随机选择pivot】
-            mid = randomPartition(arr, low, high)               # 以mid为分割点【随机选择pivot】
-            if mid == k-1:                                      # 第k小元素的下标为k-1
-                return arr[mid]                                 #【找到即返回】
-            elif mid < k-1:
-                return topKSplit(arr, mid+1, high, k)           # 递归对mid右侧元素进行排序
-            else:
-                return topKSplit(arr, low, mid-1, k)            # 递归对mid左侧元素进行排序
-        
-        n = len(nums)
-        return topKSplit(nums, 0, n-1, n-k+1)                   # 第k大元素即为第n-k+1小元素
-```
 
 # 双指针
+
+## 二分查找
+
+```python
+class Solution(object):
+    def search(self, nums, target):
+        l = 0
+        r = len(nums) - 1
+        for i in range(len(nums)):
+            mid = (l - r)/2 + r
+            if target > nums[mid]: l = mid + 1
+            elif target< nums[mid]: r = mid - 1
+            else:
+                return mid
+        return -1
+```
+
+## x的平方根
+
+```PYTHON
+class Solution:
+    def mySqrt(self, x: int) -> int:
+        l,r,ans = 0,x,-1
+        while l <= r:
+            mid = (l + r)//2
+            if mid*mid <= x:
+                res = mid
+                l = mid + 1
+            elif mid*mid > x:
+                r = mid -1
+        return res
+```
+
 ## 三数之和
 ```python
 class Solution(object):
@@ -351,26 +388,36 @@ class Solution(object):
         return res
 ```
 
+# 贪心算法
 
-# 最大子序和
-```python
-class Solution:
+## 合并区间
 
-    def maxSubArray(self, nums: List[int]) -> int:ll
-        size = len(nums)
-        if size == 0:
-            return 0
-        dp = [0 for _ in range(size)]
-    
-        dp[0] = nums[0]
-        for i in range(1, size):
-            if dp[i - 1] >= 0:
-                dp[i] = dp[i - 1] + nums[i]
+```PYTHON
+class Solution(object):
+    def merge(self, intervals):
+        """
+        :type intervals: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        if len(intervals) == 0: return intervals
+        res = []
+        # 按左区间排序
+        intervals.sort(key=lambda x: x[0])
+        res.append(intervals[0])
+        for i in range(1,len(intervals)):
+            # 拿出上一个被合并的区间
+            last = res[-1]
+            if intervals[i][0] <= last[1]:# 如果第i个区间的左边界小于第i-1个区间的右边界
+                res[-1] = [last[0],max(last[1],intervals[i][1])]
             else:
-                dp[i] = nums[i]
-        return max(dp)
+                res.append(intervals[i])
+        return res
 ```
+
+
+
 # 合并有序链表
+
 ```python
 class Solution(object):
 
@@ -418,8 +465,8 @@ class Solution(object):
         return nums1
 ```
 
-
-# 两数之和
+# 哈希表
+## 两数之和
 ```python
 class Solution(object):
     def twoSum(self, nums, target):
@@ -766,6 +813,24 @@ class Solution:
     
         return dp[n]
 ```
+## 最大子序和
+```python
+class Solution:
+
+    def maxSubArray(self, nums: List[int]) -> int:ll
+        size = len(nums)
+        if size == 0:
+            return 0
+        dp = [0 for _ in range(size)]
+    
+        dp[0] = nums[0]
+        for i in range(1, size):
+            if dp[i - 1] >= 0:
+                dp[i] = dp[i - 1] + nums[i]
+            else:
+                dp[i] = nums[i]
+        return max(dp)
+```
 ## 买入股票的时机
 ```python
 class Solution(object):
@@ -832,3 +897,6 @@ class Solution(object):
                         edge += 1
         return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
 ```
+
+
+
