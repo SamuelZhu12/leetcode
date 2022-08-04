@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 #  排序
-=======
-# 排序
->>>>>>> temp
 ## 快排
+```python
 class Solution(object):
     def sortArray(self, nums):
         """
@@ -13,29 +10,31 @@ class Solution(object):
         def quicksort(nums,l,r):
             if l >= r:
                 return 
+
             # 随机选择一个pivot
-            index = random.randint(l, r)
-            pivot = nums[index]
-            #将pivot换到最左端
-            nums[l],nums[index] = nums[index],nums[l]
-            i,j = l,r
-            while i < j:
-                while i < j and nums[j] >= pivot:
-                    j -= 1 
-                while i < j and nums[i] <= pivot:
-                    i += 1
-                if i != j:
+             index = random.randint(l, r)
+             pivot = nums[index]
+             #将pivot换到最左端
+             nums[l],nums[index] = nums[index],nums[l]
+             i,j = l,r
+             while i < j:
+                 while i < j and nums[j] >= pivot:
+                     j -= 1 
+                 while i < j and nums[i] <= pivot:
+                     i += 1
+                 if i != j:
                     # 未重合时交换元素
-                    nums[i],nums[j] = nums[j],nums[i]
-            #将最左端的pivot放置i与j重合的地方
-            nums[l],nums[i] = nums[i],nums[l]
+                     nums[i],nums[j] = nums[j],nums[i]
+             #将最左端的pivot放置i与j重合的地方
+             nums[l],nums[i] = nums[i],nums[l]
 
             quicksort(nums,l,i-1)
             quicksort(nums,i+1,r)
         quicksort(nums,0,len(nums) - 1)
         return nums
-
+```
 ## 归并排序
+```python
 class Solution(object):
     def sortArray(self, nums):
         """
@@ -46,7 +45,7 @@ class Solution(object):
             if l == r:
                 return
             mid = (l + r) // 2
-			# 最上面一层递归的结果是数组nums[l:mid+1]（左端点为l,右端点为mid）和nums[mid+1:r+1]（左端点为mid+1,右端点为r）两个有序数组的合并
+         # 最上面一层递归的结果是数组nums[l:mid+1]（左端点为l,右端点为mid）和nums[mid+1:r+1]（左端点为mid+1,右端点为r）两个有序数组的合并
             merge_sort(nums, l, mid)
             merge_sort(nums, mid + 1, r)
             tmp = []
@@ -65,8 +64,9 @@ class Solution(object):
             nums[l:r+1] = tmp # 合并两个数组
         merge_sort(nums, 0, len(nums) - 1)
         return nums
-
+```
 ## 堆排序
+```python
 class Solution(object):
     def sortArray(self, nums):
         """
@@ -99,9 +99,10 @@ class Solution(object):
             nums[0],nums[j] = nums[j],nums[0]
             maxheap(nums,0,j-1)
         return nums
-
+```
 # 链表
 ## 相交链表
+```python
 class Solution(object):
     def getIntersectionNode(self, headA, headB):
         """
@@ -116,8 +117,10 @@ class Solution(object):
             if not pb: pb = headA
             else : pb = pb.next
         return pa
-		
+```
+
 ## 反转链表
+```python
 class Solution(object):
     def reverseList(self, head):
         """
@@ -131,8 +134,9 @@ class Solution(object):
             pre = head
             head = tmp
         return pre
-		
+```
 ## 反转链表2
+```python
 class Solution:
     # 头插法
     def reverseBetween(self, head: ListNode, left: int, right: int) -> ListNode:
@@ -151,8 +155,9 @@ class Solution:
             pre.next = next # 第一次循环，0节点的next为2节点： 0->2->1-> 3 ->4 -> 把2插到1前面
             # 第二次循环把3插到2前面
         return dummy_node.next
-		
+```
 ## 删除链表指定值的节点
+```python
     def removeElements(self, head, val):
         """
         :type head: ListNode
@@ -161,14 +166,15 @@ class Solution:
         """
         dummy = ListNode(0,head)
         cur = dummy
-        while cur.next:		# 防止cur遍历到尾节点 
+        while cur.next:       # 防止cur遍历到尾节点 
             if cur.next.val == val:
                 cur.next = cur.next.next
             else:
                 cur = cur.next
         return dummy.next
-
+```
 ## 删除倒数第n个节点 记住要加头部的懒节点
+```python
 class Solution(object):
     def removeNthFromEnd(self, head, n):
         """
@@ -190,8 +196,9 @@ class Solution(object):
             cur = cur.next
         cur.next = cur.next.next
         return dummy.next
-
+```
 ## 链表排序（用到了归并排序思想）
+```python
 class Solution:
     def sortList(self, head: Optional[ListNode]) -> Optional[ListNode]:
         def sortFunc(head,tail):
@@ -233,14 +240,15 @@ class Solution:
                 res.next = cur2
             return tmp.next
         return sortFunc(head, None)
-
+```
+```python
 # 第k大的数
 class Solution:
     def findKthLargest(self, nums: List[int], k: int) -> int:
         
         def partition(arr: List[int], low: int, high: int) -> int:
             pivot = arr[low]                                        # 选取最左边为pivot
-  
+      
             left, right = low, high     # 双指针
             while left < right:
                 
@@ -259,7 +267,7 @@ class Solution:
             pivot_idx = random.randint(low, high)                   # 随机选择pivot
             arr[low], arr[pivot_idx] = arr[pivot_idx], arr[low]     # pivot放置到最左边
             return partition(arr, low, high)                        # 调用partition函数
-
+    
         def topKSplit(arr: List[int], low: int, high: int, k: int) -> int:
             # mid = partition(arr, low, high)                   # 以mid为分割点【非随机选择pivot】
             mid = randomPartition(arr, low, high)               # 以mid为分割点【随机选择pivot】
@@ -272,9 +280,11 @@ class Solution:
         
         n = len(nums)
         return topKSplit(nums, 0, n-1, n-k+1)                   # 第k大元素即为第n-k+1小元素
+```
 
-
-# 三数之和
+# 双指针
+## 三数之和
+```python
 class Solution(object):
     def threeSum(self, nums):
         """
@@ -305,9 +315,11 @@ class Solution(object):
                     r -= 1
             
         return res
-		
-		
-# 四数之和
+```
+
+
+## 四数之和
+```python
 class Solution(object):
     def fourSum(self, nums, target):
         """
@@ -337,10 +349,11 @@ class Solution(object):
                         l += 1
                         r -= 1
         return res
+```
 
 
-		
 # 最大子序和
+```python
 class Solution:
 
     def maxSubArray(self, nums: List[int]) -> int:ll
@@ -348,7 +361,7 @@ class Solution:
         if size == 0:
             return 0
         dp = [0 for _ in range(size)]
-
+    
         dp[0] = nums[0]
         for i in range(1, size):
             if dp[i - 1] >= 0:
@@ -356,30 +369,9 @@ class Solution:
             else:
                 dp[i] = nums[i]
         return max(dp)
-
-
-# 买入股票的时机
-class Solution(object):
-    def maxProfit(self, prices):
-        """
-        :type prices: List[int]
-        :rtype: int
-        """
-        if len(prices) <= 1: return 0
-        dp = [0 for _ in prices]
-        dp[1] = prices[1] - prices[0]
-        
-        for i in range(2,len(prices)):
-            if dp[i-1] >= 0:
-                dp[i] = dp[i - 1] + prices[i]-prices[i-1]
-            else:
-                dp[i] = prices[i] -prices[i-1]
-        return max(max(dp),0)
-
-
-
+```
 # 合并有序链表
-
+```python
 class Solution(object):
 
     def mergeTwoLists(self, list1, list2):
@@ -403,10 +395,10 @@ class Solution(object):
         else:
             res.next = list1
         return pre_head.next
-		
-		
-		
+```
+
 # 合并非递减数组
+``` python
     def merge(self, nums1, m, nums2, n):
         tmp = []
         i = 0
@@ -424,10 +416,11 @@ class Solution(object):
             tmp = tmp + nums1[i:m]
         nums1[:] = tmp
         return nums1
+```
 
 
-		
 # 两数之和
+```python
 class Solution(object):
     def twoSum(self, nums, target):
         """
@@ -442,10 +435,11 @@ class Solution(object):
                 j = nums.index(tmp)
                 if i == j :continue
                 else : return [i,j]
-				
-				
+```
+
 # 二叉树
 ## 二叉树中序遍历
+```python
 class Solution(object):
     def inorderTraversal(self, root):
         """
@@ -460,9 +454,10 @@ class Solution(object):
             traversal(root.right)
         traversal(root)
         return res
-
+```
 ## 二叉树层序遍历
 ### 递归法
+```python
 class Solution(object):
     def levelOrder(self, root):
         """
@@ -479,7 +474,9 @@ class Solution(object):
             if root.right: func(root.right,level+1)
         func(root,0)
         return res
+```
 ### 迭代法
+```python
 class Solution(object):
     def levelOrder(self, root):
         """
@@ -500,8 +497,9 @@ class Solution(object):
                 if cur.right: nodeQue.append(cur.right)
             results.append(res)
         return results
-
+```
 ## 二叉树锯齿形层序遍历
+```python
 class Solution(object):
     def zigzagLevelOrder(self, root):
         """
@@ -525,8 +523,9 @@ class Solution(object):
             flag += 1
             results.append(res)
         return results
-
+```
 ## 二叉树右视图
+```python
 class Solution(object):
     def rightSideView(self, root):
         """
@@ -544,8 +543,9 @@ class Solution(object):
                 if cur.left: nodeQue.append(cur.left)
                 if cur.right: nodeQue.append(cur.right)
         return res
-
-## 二叉树最大深度：
+```
+## 二叉树最大深度
+```python
 class Solution(object):
     def maxDepth(self, root):
         """
@@ -556,8 +556,9 @@ class Solution(object):
             if not root: return 0
             else : return 1 + max(traverse(root.left),traverse(root.right))
         return traverse(root)
-
+```
 ## 二叉树最小深度
+```python
 class Solution:
     def minDepth(self, root: TreeNode) -> int:
         if not root:
@@ -565,16 +566,17 @@ class Solution:
 
         if not root.left and not root.right:
             return 1
-
+    
         min_depth = 10 ** 9
         if root.left:
             min_depth = min(self.minDepth(root.left), min_depth)
         if root.right:
             min_depth = min(self.minDepth(root.right), min_depth)
-
+    
         return min_depth + 1
-
+```
 ## 迭代法的最小深度
+```python
 class Solution:
     def minDepth(self, root: TreeNode) -> int:
         if root == None:
@@ -584,7 +586,7 @@ class Solution:
         queue_ = [(root, 1)]
         while queue_:
             cur, depth = queue_.pop(0)
-
+    
             if cur.left == None and cur.right == None:
                 return depth
             # 先左子节点，由于左子节点没有孩子，则就是这一层了
@@ -592,35 +594,11 @@ class Solution:
                 queue_.append((cur.left, depth + 1))
             if cur.right:
                 queue_.append((cur.right, depth + 1))
-
-        return 0
-
-# 岛屿数量
-class Solution:
-    def dfs(self, grid, r, c):
-        grid[r][c] = 0
-        nr, nc = len(grid), len(grid[0])
-        for x, y in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]:
-            if 0 <= x < nr and 0 <= y < nc and grid[x][y] == "1":
-                self.dfs(grid, x, y)
-
-    def numIslands(self, grid: List[List[str]]) -> int:
-        nr = len(grid)
-        if nr == 0:
-            return 0
-        nc = len(grid[0])
-
-        num_islands = 0
-        for r in range(nr):
-            for c in range(nc):
-                if grid[r][c] == "1":
-                    num_islands += 1
-                    self.dfs(grid, r, c)
-        
-        return num_islands
-
-
+    
+        return 
+```
 # 最长回文子串
+```python
 class Solution:
     def longestPalindrome(self, s: str) -> str:
         n = len(s)
@@ -658,10 +636,11 @@ class Solution:
                     max_len = j - i + 1
                     begin = i
         return s[begin:begin + max_len]
-
+```
 
 # 回溯
-# 全排列
+## 全排列
+```python
 class Solution:
     def permute(self, nums):
         """
@@ -684,8 +663,9 @@ class Solution:
         res = []
         backtrack()
         return res
-
-# 带有target的组合 如[2,2,2,3]之和等于7的所有组合
+```
+## 带有target的组合 如[2,2,2,3]之和等于7的所有组合
+```python
 class Solution(object):
     def combinationSum(self, candidates, target):
         """
@@ -708,10 +688,11 @@ class Solution(object):
         n = len(candidates)
         backtracking(target, n, 0, candidates)
         return res
-
+```
 
 # 动态规划
 ## 带障碍的路径规划
+```python
 class Solution(object):
     def uniquePathsWithObstacles(self, obstacleGrid):
         """
@@ -720,12 +701,12 @@ class Solution(object):
         """
         m = len(obstacleGrid)
         n = len(obstacleGrid[0])
-		# 初始化为0
+      # 初始化为0
         dp = [[0 for _ in range(n)] for _ in range(m)]
         if obstacleGrid[0][0] == 1:
             return 0
         else: dp[0][0] = 1
-		# 第一行第一列的初始化，如果有障碍，则后面的dp数组置为0
+      # 第一行第一列的初始化，如果有障碍，则后面的dp数组置为0
         for i in range(1,n):
             if obstacleGrid[0][i] != 1:
                 dp[0][i] = dp[0][i-1]
@@ -738,8 +719,10 @@ class Solution(object):
                     dp[i][j] = dp[i-1][j] + dp[i][j-1]
 
         return dp[m-1][n-1]
-		
+```
+
 ## 爬楼梯
+```python
 class Solution(object):
     def climbStairs(self, n):
         """
@@ -752,8 +735,10 @@ class Solution(object):
         for i in range(2,n+1):
             dp[i] = dp[i-1] + dp[i-2]
         return dp[n]
-		
+```
+
 ## 拆分两数
+```python
 class Solution:
     def integerBreak(self, n: int) -> int:
         dp = [0] * (n + 1)
@@ -778,11 +763,30 @@ class Solution:
         for i in range(1,n+1):
             for j in range(1,i+1):
                 dp[i] += dp[j-1]*dp[i-j]
-
+    
         return dp[n]
-		
-		
+```
+## 买入股票的时机
+```python
+class Solution(object):
+    def maxProfit(self, prices):
+        """
+        :type prices: List[int]
+        :rtype: int
+        """
+        if len(prices) <= 1: return 0
+        dp = [0 for _ in prices]
+        dp[1] = prices[1] - prices[0]
+        
+        for i in range(2,len(prices)):
+            if dp[i-1] >= 0:
+                dp[i] = dp[i - 1] + prices[i]-prices[i-1]
+            else:
+                dp[i] = prices[i] -prices[i-1]
+        return max(max(dp),0)
+```
 # dfs岛屿问题
+```python
 class Solution(object):
     def numIslands(self, grid):
         """
@@ -805,8 +809,9 @@ class Solution(object):
                     dfs(grid,i,j)
                     count += 1
         return count
-
+```
 # 岛屿周长
+```python
 class Solution(object):
     def islandPerimeter(self, grid):
         """
@@ -826,4 +831,4 @@ class Solution(object):
                     if i+1 < m and grid[i+1][j] == 1:
                         edge += 1
         return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
-                
+```
