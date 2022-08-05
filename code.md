@@ -1,9 +1,102 @@
 [TOC]
 
+# LRU
+
+用hashmap(dict类)和链表构造一个双向数据结构，即Python中的OrderedDict类。但需要自己去构造该类
+
+<img src="../../Library/Application Support/typora-user-images/image-20220805141459339.png" alt="image-20220805141459339" style="zoom:67%;" />
+
+```python
+class ListNode:
+    def __init__(self, key=None, value=None):
+        self.key = key
+        self.value = value
+        self.prev = None
+        self.next = None
+class LRUCache(object):
+
+    def __init__(self, capacity):
+        """
+        :type capacity: int
+        """
+        # 哈希表+链表 最近访问的节点在尾节点，最久未访问的节点在头节点
+        self.capacity = capacity
+        self.hashmap = {}
+        # 新建两个节点 head 和 tail
+        self.head = ListNode()
+        self.tail = ListNode()
+        # 初始化链表为 head <-> tail
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    # 封装方法
+    # 将节点由头移到尾（最近访问）
+    def move_node_to_tail(self,key):
+        # 从哈希表中拿节点
+        node = self.hashmap[key]
+        # 删除该节点
+        node.prev.next = node.next
+        node.next.prev = node.prev
+        # 插入该节点到尾节点之前
+        node.next = self.tail
+        node.prev = self.tail.prev
+        self.tail.prev.next = node
+        self.tail.prev = node
+
+
+    def get(self, key):
+        """
+        :type key: int
+        :rtype: int
+        """
+        # 如果key存在于hashmap
+        if key in self.hashmap:
+            self.move_node_to_tail(key)
+        # hashmap中存在就返回key，不存在就返回-1
+        res = self.hashmap.get(key,-1)
+        if res == -1:
+            return res
+        else:
+            return res.value
+    def put(self, key, value):
+        """
+        :type key: int
+        :type value: int
+        :rtype: None
+        """
+        # 如果key在hashmap中,改变value，并放到链表尾部（最近访问）
+        if key in self.hashmap:
+            self.hashmap[key].value = value
+            self.move_node_to_tail(key)
+        else:
+            #在插入之前判断容量
+            if len(self.hashmap) == self.capacity:
+                #删除头节点对应的字典键值
+                self.hashmap.pop(self.head.next.key)
+                # 删除最久未使用的元素：链表头部元素
+                self.head.next = self.head.next.next
+                self.head.next.prev = self.head
+            # 此时保证capacity不超过，且key不存在表中，则插入：
+            # 字典先插入
+            newNode = ListNode(key,value)
+            self.hashmap[key] = newNode
+            # 链表从尾部插入
+            newNode.prev = self.tail.prev
+            newNode.next = self.tail
+            self.tail.prev.next = newNode
+            self.tail.prev = newNode
+```
+
+
+
 #  排序
 
 ## 快排
 ```python
+## 时间复杂度：基于随机选取主元的快速排序时间复杂度为期望 O(nlogn)，其中 n为数组的长度。详细证明过程可以见《算法导论》第七章，这里不再大篇幅赘述。
+
+## 空间复杂度：O(h)O(h)，其中 hh 为快速排序递归调用的层数。我们需要额外的 O(h)O(h) 的递归调用的栈空间，由于划分的结果不同导致了快速排序递归调用的层数也会不同，最坏情况下需 O(n)O(n) 的空间，最优情况下每次都平衡，此时整个递归树高度为 \log nlogn，空间复杂度为 O(\log n)O(logn)。
+
 class Solution(object):
     def sortArray(self, nums):
         """
@@ -38,6 +131,9 @@ class Solution(object):
 ```
 ## 归并排序
 ```python
+时间复杂度：O(nlogn)。由于归并排序每次都将当前待排序的序列折半成两个子序列递归调用，然后再合并两个有序的子序列，而每次合并两个有序的子序列需要 O(n)的时间复杂度，所以我们可以列出归并排序运行时间 T(n)T(n) 的递归表达式：
+空间复杂度：O(n)。我们需要额外 O(n)空间的tmp数组，且归并排序递归调用的层数最深为nlogn，所以我们还需要额外的 O(logn) 的栈空间，所需的空间复杂度即为 O(n+logn) = O(n)O(n+logn)=O(n)。
+
 class Solution(object):
     def sortArray(self, nums):
         """
@@ -70,6 +166,9 @@ class Solution(object):
 ```
 ## 堆排序
 ```python
+# 时间复杂度：O(nlogn)。初始化建堆的时间复杂度为 O(n)，建完堆以后需要进行 n-1次调整，一次调整（即 maxHeapify） 的时间复杂度为 O(logn)，那么 n-1n−1 次调整即需要 O(n\log n)O(nlogn) 的时间复杂度。因此，总时间复杂度为 O(n+nlogn)=O(n+nlogn)=O(nlogn)。
+
+
 class Solution(object):
     def sortArray(self, nums):
         """

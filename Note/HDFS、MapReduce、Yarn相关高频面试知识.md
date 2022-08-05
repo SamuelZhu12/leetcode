@@ -109,6 +109,16 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 
 ## 4. Yarn资源调度工作机制
 
+- **基本概念**：
+
+NodeManager是Yarn中单节点的代理，它管理Hadoop集群中单个计算节点，其需要与应用程序的ApplicationMaster和集群资源管理器RM交互，从ApplicationMaster上接收到相关Container的执行命令(启动，停止Container)；并向RM汇报各个Container的运行状态和节点健康状态，并领取相关的Container的执行命令；其主要的功能包括与RM保持通信，管理Container的生命周期，监控每个Container的资源使用情况，追踪节点健康状况，管理日志以及不同应用程序用到的附属服务;
+
+NodeManager通过两个RPC协议与RM和各个ApplicationMaster进行通信：
+
+
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208051653127.png" alt="NodeManager1.png" style="zoom:50%;" />
+
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202207291733560.png)
 
 
