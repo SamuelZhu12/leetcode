@@ -385,6 +385,38 @@ class Solution:
         return sortFunc(head, None)
 ```
 
+## 两数相加
+
+https://leetcode.cn/problems/add-two-numbers/
+
+```python
+# Definition for singly-linked list.
+# class ListNode(object):
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+# 题目要求：链表l1 2 -> 4 -> 3 和链表l2 5 -> 6 -> 4，计算342+564 = 807 输出为链表 7 -> 0 -> 8 
+class Solution(object):
+    def addTwoNumbers(self, l1, l2):
+        """
+        :type l1: ListNode
+        :type l2: ListNode
+        :rtype: ListNode
+        """
+        dummy = cur = ListNode(0) #  建立一个新的头节点来返回结果
+        s = 0
+        while l1 or l2 or s != 0:
+            s += (l1.val if l1 else 0) + (l2.val if l2 else 0) # 链表对应位置节点为空时则补0
+            cur.next = ListNode(s % 10) # 存储链表对应位置节点val之和，通过取模mod来取进位情况的个位数存储到下一个节点
+            cur = cur.next # 三个链表同时访问下一个节点
+            if l1:l1 = l1.next
+            if l2:l2 = l2.next
+            s = s // 10 #将进位数加到下一轮的计算中 '//'取的是除完以后的整数部分
+        return dummy.next
+```
+
+
+
 # 双指针
 
 ## 二分查找
@@ -510,6 +542,153 @@ class Solution(object):
                 res[-1] = [last[0],max(last[1],intervals[i][1])]
             else:
                 res.append(intervals[i])
+        return res
+```
+
+## 分发饼干
+
+```python
+# g为小孩的胃口值：[7,8,9,10]
+# s为饼干的尺寸，当尺寸>胃口值时可满足一个小孩的胃口，找到可满足小孩数量的最大值 s = [5,6,7,8]
+# 将两个数组倒序排列，分别比较两个数组的最大值
+class Solution(object):
+    def findContentChildren(self, g, s):
+        g = sorted(g,reverse=True)
+        s = sorted(s,reverse=True)
+        res = 0
+        for i in range(len(g)):
+            if res == len(s): return res
+            if s[res] >= g[i]:
+                res += 1
+        return res
+```
+
+## 摆动序列
+
+```python
+class Solution(object):
+    def wiggleMaxLength(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        # 如果是[2,3,6]，则默认[2,3]是摆动序列，因为有一个最低峰和一个最高峰
+        # 计算有多少个波峰和波谷
+        res = 1 # 默认
+        pre = 0
+        cur = 0
+        for i in range(0,len(nums) - 1):
+            cur = nums[i+1] - nums[i]
+            if (cur < 0 and pre >=0) or (cur > 0 and pre <= 0): # 这里一定要带等号，这样数组个数为2时保证res = 2
+                res += 1
+                pre = cur
+        return res
+```
+
+## 买卖股票的最佳时机
+
+```python
+class Solution(object):
+    def maxProfit(self, prices):
+        """
+        :type prices: List[int]
+        :rtype: int
+        """
+        res = 0
+        for i in range(len(prices)-1):
+        # 对局部而言，每次都取差值大于0，即利润大于0的时间
+        # profit[0:3] = profit[3] - profit[2] + profit[2] - profit[1] + profit[1] - profit[0]
+            profit = prices[i+1] - prices[i]
+            if profit >= 0:
+                res += profit
+        return res
+```
+
+## 跳跃游戏
+
+https://leetcode.cn/problems/jump-game/
+
+```python
+## 1 0 1 3 4
+## 每个值代表可向前跳跃的最大值，能否跳跃到终点？
+class Solution(object):
+    def canJump(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        """
+        cover = 0
+        i = 0
+        # 对cover可覆盖到的地方进行遍历,python中for不支持动态修改循环变量
+        while i <= cover:
+            # 每一个点的覆盖范围，更新最大跳跃覆盖范围
+            cover = max(cover,nums[i] + i)
+            if cover >= len(nums)-1:
+                return True
+            i += 1
+
+        return False
+```
+
+## 跳跃游戏2
+
+https://leetcode.cn/problems/jump-game-ii/
+
+```python
+## 假设这组数组可以最终跳到终点，求最小跳跃次数
+## 在当前覆盖范围之内，更新该范围内每个点的最大覆盖范围，取最大值；当访问到当前范围最右侧的点时如果无法跳跃到中点，则进行下一个范围的覆盖,res++
+class Solution(object):
+    def jump(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        curcover = 0
+        nextcover = 0
+        res = 0
+        if len(nums) == 1:
+            return 0
+        for i in range(len(nums)):
+            nextcover = max(nextcover,i+nums[i]) # 当前覆盖范围内的下一步跳跃最大覆盖范围
+            if i == curcover:# 如果走到右边界还没有到最大覆盖范围，则需要跳一步来更新最大覆盖范围
+                res += 1
+                curcover = nextcover
+                if nextcover >= len(nums) - 1:break
+            else:
+                continue
+        return res
+```
+
+## 加油站
+
+https://leetcode.cn/problems/gas-station/
+
+![image-20220807225947320](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/image-20220807225947320.png)
+
+```python
+class Solution(object):
+    def canCompleteCircuit(self, gas, cost):
+        """
+        :type gas: List[int]
+        :type cost: List[int]
+        :rtype: int
+        """
+        rest = 0 #油箱剩余油量
+        restMin = 0 #油箱最小剩余油量
+        restSum = 0
+        res = 0
+        resList = []
+        for i in range(len(gas)):
+            rest = gas[i] - cost[i] # 从第i个点出发能否到达下一个点
+            restSum += rest # rest的累计值
+            if restMin > restSum:
+                restMin = restSum
+                res = i+1 # 如果restSum>0，则说明一定可以满足环绕条件，而最小的restSum的下一个加油站就是开始的加油站，因为前面的restSum是小于0的，往后面走一定可以把前面的坑补上，而如果先走了正确起点加油站的后面的加油站，中途会因油不足而无法满足条件
+
+        if restSum < 0: return -1 # 此时不管从哪个点出发都无法环绕一圈
+        
+        if restMin >= 0: return 0 # 此时说明每次的备油量都是充足的，都可以从0出发到达下一个点
+
         return res
 ```
 
