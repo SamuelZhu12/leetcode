@@ -4,7 +4,7 @@
 
 用hashmap(dict类)和链表构造一个双向数据结构，即Python中的OrderedDict类。但需要自己去构造该类
 
-<img src="../../Library/Application Support/typora-user-images/image-20220805141459339.png" alt="image-20220805141459339" style="zoom:67%;" />
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208090950122.png" alt="image-20220805141459339" style="zoom:67%;" />
 
 ```python
 class ListNode:

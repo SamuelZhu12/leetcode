@@ -200,10 +200,31 @@ sparkContext.textFile(Path)
 4）调度节点将任务根据计算节点状态发送到对应的计算节点进行计算
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208051612610.png)
 
-
 **从上述流程可以看出RDD在整个流程中主要用于将逻辑封装，并生成Task发送给Executor节点执行计算。**
 
 ### 3.4 RDD转换算子
+
+| Transformation 算子                                          | Meaning（含义）                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **map**(*func*)                                              | 对原 RDD 中每个元素运用 *func* 函数，并生成新的 RDD          |
+| **filter**(*func*)                                           | 对原 RDD 中每个元素使用*func* 函数进行过滤，并生成新的 RDD   |
+| **flatMap**(*func*)                                          | 与 map 类似，但是每一个输入的 item 被映射成 0 个或多个输出的 items（ *func* 返回类型需要为 Seq ）。 |
+| **mapPartitions**(*func*)                                    | 与 map 类似，但函数单独在 RDD 的每个分区上运行， *func*函数的类型为 Iterator<T> => Iterator<U> ，其中 T 是 RDD 的类型，即 RDD[T] |
+| **mapPartitionsWithIndex**(*func*)                           | 与 mapPartitions 类似，但 *func* 类型为 (Int, Iterator<T>) => Iterator<U> ，其中第一个参数为分区索引 |
+| **sample**(*withReplacement*, *fraction*, *seed*)            | 数据采样，有三个可选参数：设置是否放回（withReplacement）、采样的百分比（*fraction*）、随机数生成器的种子（seed）； |
+| **union**(*otherDataset*)                                    | 合并两个 RDD                                                 |
+| **intersection**(*otherDataset*)                             | 求两个 RDD 的交集                                            |
+| **distinct**([*numTasks*]))                                  | 去重                                                         |
+| **groupByKey**([*numTasks*])                                 | 按照 key 值进行分区，即在一个 (K, V) 对的 dataset 上调用时，返回一个 (K, Iterable<V>) **Note:** 如果分组是为了在每一个 key 上执行聚合操作（例如，sum 或 average)，此时使用 `reduceByKey` 或 `aggregateByKey` 性能会更好。 **Note:** 默认情况下，并行度取决于父 RDD 的分区数。可以传入 `numTasks` 参数进行修改。 |
+| **reduceByKey**(*func*, [*numTasks*])                        | 按照 key 值进行分组，并对分组后的数据执行归约操作。          |
+| **aggregateByKey**(*zeroValue*,*numPartitions*)(*seqOp*, *combOp*, [*numTasks*]) | 当调用（K，V）对的数据集时，返回（K，U）对的数据集，其中使用给定的组合函数和 zeroValue 聚合每个键的值。与 groupByKey 类似，reduce 任务的数量可通过第二个参数进行配置。 |
+| **sortByKey**([*ascending*], [*numTasks*])                   | 按照 key 进行排序，其中的 key 需要实现 Ordered 特质，即可比较 |
+| **join**(*otherDataset*, [*numTasks*])                       | 在一个 (K, V) 和 (K, W) 类型的 dataset 上调用时，返回一个 (K, (V, W)) pairs 的 dataset，等价于内连接操作。如果想要执行外连接，可以使用 `leftOuterJoin`, `rightOuterJoin` 和 `fullOuterJoin` 等算子。 |
+| **cogroup**(*otherDataset*, [*numTasks*])                    | 在一个 (K, V) 对的 dataset 上调用时，返回一个 (K, (Iterable<V>, Iterable<W>)) tuples 的 dataset。 |
+| **cartesian**(*otherDataset*)                                | 在一个 T 和 U 类型的 dataset 上调用时，返回一个 (T, U) 类型的 dataset（即笛卡尔积）。 |
+| **coalesce**(*numPartitions*)                                | 将 RDD 中的分区数减少为 numPartitions。                      |
+| **repartition**(*numPartitions*)                             | 随机重新调整 RDD 中的数据以创建更多或更少的分区，并在它们之间进行平衡。 |
+| **repartitionAndSortWithinPartitions**(*partitioner*)        | 根据给定的 partitioner（分区器）对 RDD 进行重新分区，并对分区中的数据按照 key 值进行排序。这比调用 `repartition` 然后再 sorting（排序）效率更高，因为它可以将排序过程推送到 shuffle 操作所在的机器。 |
 
 RDD根据数据处理方式的不同将算子整体上分为Value类型、双Value类型和Key-Value类型
 
@@ -214,35 +235,27 @@ RDD根据数据处理方式的不同将算子整体上分为Value类型、双Val
 函数说明：将处理的数据逐条进行映射转换。这里的转换可以是类型的转换也可以是值的转换。要求数据经过map后不会增多或者减少。
 
 ```scala
-def map[U:ClassTag](f:T=>U):RDD[U]
-//函数签名
+val list = List(1,2,3)
+sc.parallelize(list).map(_ * 10).foreach(println)
 
-
-val dataRDD: RDD[Int] = sparkContext.makeRDD(List(1,2,3,4))
-val dataRDD1: RDD[Int] = dataRDD.map(num =>	{
-    num*2
-})
-val dataRDD2: RDD[String] = dataRDD1.map(
-    num => {
-    ""+ num
-})
+// 输出结果： 10 20 30 （这里为了节省篇幅去掉了换行,后文亦同）
 ```
 
 2） mapPartitions
 
-函数说明：将待处理的数据以分区为单位发送到计算节点进行处理，这里的处理可以是任意的处理哪怕是过滤数据。 
+函数说明：将待处理的数据以分区为单位发送到计算节点进行处理，与 map 类似，但函数单独在 RDD 的每个分区上运行， *func*函数的类型为 `Iterator<T> => Iterator<U>` (其中 T 是 RDD 的类型)，即输入和输出都必须是可迭代类型。
 
 ```scala
-def mapPartitions[U:classTag](
-	f:Iterator[T] => Iterator[U],
-	preservesPartitioning:Boolean = false) : RDD[U]
-	)
-//函数签名
-
-val dataRDD1: RDD[Int] = dataRDD.mapPartitions(
-	datas => {
-        datas.filter(_==2)
-    })
+val list = List(1, 2, 3, 4, 5, 6)
+sc.parallelize(list, 3).mapPartitions(iterator => {
+  val buffer = new ListBuffer[Int]
+  while (iterator.hasNext) {
+    buffer.append(iterator.next() * 100)
+  }
+  buffer.toIterator
+}).foreach(println)
+//输出结果
+100 200 300 400 500 600
 ```
 
 **Map算子是以分区内一个数据为单位依次执行，类似于串行操作；mapPartitions算子是以分区为单位进行批处理操作。**
@@ -252,31 +265,32 @@ val dataRDD1: RDD[Int] = dataRDD.mapPartitions(
 函数说明：将待处理的数据以分区为单位发送到计算节点进行处理，这里的处理可以是任意的处理哪怕是过滤数据，**在处理的同时可以获取当前分区索引。**
 
 ```scala
-def mapPartitionsWithIndex[U:ClassTag](
-	f:(Int,Iterator[T]) => Iterator[U]),
-	preservesPartitioning:Boolean = false):RDD[U]
-//函数签名
-
-val dataRDD1 = dataRDD.mapPartitionWithIndex(
-	(index,data) => {
-        data.map(index,_)
-    }
-)
+val list = List(1, 2, 3, 4, 5, 6)
+sc.parallelize(list, 3).mapPartitionsWithIndex((index, iterator) => {
+  val buffer = new ListBuffer[String]
+  while (iterator.hasNext) {
+    buffer.append(index + "分区:" + iterator.next() * 100)
+  }
+  buffer.toIterator
+}).foreach(println)
+//输出
+0 分区:100
+0 分区:200
+1 分区:300
+1 分区:400
+2 分区:500
+2 分区:600
 ```
 
 4）flatMap
 
-函数说明：将处理后的数据进行扁平化后再进行映射处理（继续拆分），所以算子也称扁平映射。将一对多拆分成一对一。
+函数说明：将处理后的数据进行扁平化后再进行映射处理（继续拆分），所以算子也称扁平映射。将一对多拆分成一对一。每一个输入的 item 会被映射成 0 个或多个输出的 items（ *func* 返回类型需要为 `Seq`
 
 ```scala
-def flatMap[U:ClassTag](f:T=>TraversableOnce[U]):RDD[U]
-//函数签名
+val list = List(List(1, 2), List(3), List(), List(4, 5))
+sc.parallelize(list).flatMap(_.toList).map(_ * 10).foreach(println)
 
-val dataRDD = sparkContext.makeRDD(List(
-	List(1,2),List(3,4),1))
-val dataRDD1 = dataRDD.flatMap(
-	list => list
-)
+// 输出结果 ： 10 20 30 40 50
 ```
 
 5）glom
@@ -311,24 +325,19 @@ val dataRDD1 = dataRDD.groupBy(
 函数说明：将数据根据指定的规则进行筛选过滤，符合规则的数据保留，不符合规则的数据丢弃。当数据进行筛选过滤后，分区不变，但是分区内的数据可能不均衡。在生产环境下，可能会出现数据倾斜。
 
 ```scala
-def filter(f: T=> Boolean): RDD[T]
-//函数签名
+val list = List(3, 6, 9, 10, 12, 21)
+sc.parallelize(list).filter(_ >= 10).foreach(println)
 
-val dataRDD = sparkContext.makeRDD(List(
-1,2,3,4)
-,1)
-val dataRDD1 = dataRDD.filter(_%2 == 0)
+// 输出： 10 12 21
 ```
 
 8）sample
 
-函数说明：根据指定的规则从数据集中抽取数据
+函数说明：根据指定的规则从数据集中抽取数据。有三个可选参数：设置是否放回 (withReplacement)、采样的百分比 (fraction)、随机数生成器的种子 (seed)
 
 ```scala
-val dataRDD = sparkContext.makeRDD(List(1,2,3,4),1)
-
-val dataRDD1 = dataRDD.sample(false,0.5) //1、不放回 2、抽取几率	3、随机数种子
-val dataRDD2 = dataRDD.sample(true,2)//1、放回 	2、	重复数据纪律	3、随机数种子
+val list = List(1, 2, 3, 4, 5, 6)
+sc.parallelize(list).sample(withReplacement = false, fraction = 0.5).foreach(println)
 ```
 
 9）distinct
@@ -336,16 +345,9 @@ val dataRDD2 = dataRDD.sample(true,2)//1、放回 	2、	重复数据纪律	3、�
 函数说明：将数据集中重复的数据去重
 
 ```scala
-def distinct()(implicit ord:Ordering[T] = null):RDD[T]
-def distinct(numPartitions:Int)(implicit ord:Ordering[T] = null) :RDD[T]
-
-
-val dataRDD = sparkContext.makeRDD(List(
-	1,2,3,4,1,2
-),1)
-val dataRDD1 = dataRDD.distinct()
-
-val dataRDD2 = dataRDD.distinct(2)
+val list = List(1, 2, 2, 4, 4)
+sc.parallelize(list).distinct().foreach(println)
+// 输出: 4 1 2
 ```
 
 10）coalesce
@@ -368,18 +370,12 @@ def coalesce(numPartitions:Int,shuffle:Boolean = false,
 函数说明：该操作用于排序数据。再排序之前可以将数据通过f函数进行处理，之后按照f函数处理的结果进行排序，默认为升序排序。排列后新产生的RDD的分区数与原RDD的分区数一致，中间存在shuffle过程。
 
 ```scala
-def sortBy[K](
-	f:(T) => K,
-	ascending Boolean=true,
-	numPartitions:Int = this.partitions.length)
-	(implicit ord:Ordering[K],ctag:ClassTag[K]):RDD[T]
-//函数签名
-
-val dataRDD = sparkContext.makeRDD(List(
-	1,2,3,4,1,2
-),2)
-
-val dataRDD1 = dataRDD.sortBy(num=>num,false,4)
+val list02 = List(("hadoop",100), ("spark",90), ("storm",120))
+sc.parallelize(list02).sortBy(x=>x._2,ascending=false).foreach(println)
+// 输出
+(storm,120)
+(hadoop,100)
+(spark,90)
 ```
 
 **双value类型**
@@ -402,12 +398,10 @@ val dataRDD = dataRDD1.intersection(dataRDD2)
 函数说明：对源RDD和参数RDD求并集后返回一个新的RDD
 
 ```scala
-def union(other:RDD[T]):RDD[T]
-//函数签名
-
-val dataRDD1 = sparkContext.makeRDD(List(1,2,3,4))
-val dataRDD2 = sparkContext.makeRDD(List(3,4,5,6))
-val dataRDD = dataRDD1.union(dataRDD2)
+val list1 = List(1, 2, 3)
+val list2 = List(4, 5, 6)
+sc.parallelize(list1).union(sc.parallelize(list2)).foreach(println)
+// 输出: 1 2 3 4 5 6
 ```
 
 15）subtract
@@ -455,13 +449,13 @@ val rdd2: RDD[(Int,String)] = rdd.partitionBy(new HashPartitioner(2))
 **18）reduceByKey**
 
 ```scala
-def reduceByKey(func:(V,V)=>V):RDD[(K,V)]
-def reduceByKey(func:(V,V)=>V, numPartitions:Int):RDD[(K,V)]
-//函数签名
+val list = List(("hadoop", 2), ("spark", 3), ("spark", 5), ("storm", 6), ("hadoop", 2))
+sc.parallelize(list).reduceByKey(_ + _).foreach(println)
 
-val dataRDD1 = sparkContext.makeRDD(List(("a",1),("b",2),("c",3)))
-val dataRDD2 = dataRDD1.reduceByKey(_+_)
-val dataRDD3 = dataRDD1.reduceByKey(_+_, 2)
+//输出
+(spark,8)
+(hadoop,4)
+(storm,6)
 ```
 
 19）groupByKey
@@ -469,16 +463,13 @@ val dataRDD3 = dataRDD1.reduceByKey(_+_, 2)
 函数说明：将数据源的数据根据key对value进行分组
 
 ```scala
-def groupByKey():RDD[(K,Iterable[V])]
-def groupByKey(numPartitions:Int):RDD[(K,Iterable[V])]
-def groupByKey(partition:Partition):RDD[(K,Iterable[V])]
-//函数签名
+val list = List(("hadoop", 2), ("spark", 3), ("spark", 5), ("storm", 6), ("hadoop", 2))
+sc.parallelize(list).groupByKey().map(x => (x._1, x._2.toList)).foreach(println)
 
-
-val dataRDD1 = sparkContext.makeRDD(List(("a",1),("b",2),("c",3)))
-val dataRDD2 = dataRDD1.groupByKey()
-val dataRDD3 = dataRDD1.groupByKey(2)
-val dataRDD4 = dataRDD1.groupByKey(new HashPartitioner(2))
+//输出：
+(spark,List(3, 5))
+(hadoop,List(2, 2))
+(storm,List(6))
 ```
 
 **reduceByKey和groupByKey的区别？**
@@ -487,25 +478,53 @@ reduceByKey和groupByKey都存在shuffle操作，但是reduceByKey可以在shuff
 
 20）aggregateByKey
 
-函数说明：将数据根据不同的规则进行**分区内计算和分区间计算**
+函数说明：将数据根据不同的规则进行**分区内计算和分区间计算**。
+
+当调用（K，V）对的数据集时，返回（K，U）对的数据集，其中使用给定的组合函数和 zeroValue 聚合每个键的值。与 `groupByKey` 类似，reduce 任务的数量可通过第二个参数 `numPartitions` 进行配置。示例如下：
 
 ```scala
-def aggregateByKey[U:ClassTag](zeroValue:U)(seqOp:(U,V)=>U,combOp:(U,U)=>U):RDD[(K,U)]
-//
-        // aggregateByKey存在函数柯里化，有两个参数列表
-        // 第一个参数列表,需要传递一个参数，表示为初始值
-        //       主要用于当碰见第一个key的时候，和value进行分区内计算
-        // 第二个参数列表需要传递2个参数
-        //      第一个参数表示分区内计算规则
-        //      第二个参数表示分区间计算规则
+// 为了清晰，以下所有参数均使用具名传参
+val list = List(("hadoop", 3), ("hadoop", 2), ("spark", 4), ("spark", 3), ("storm", 6), ("storm", 8))
+sc.parallelize(list,numSlices = 2).aggregateByKey(zeroValue = 0,numPartitions = 3)(
+      seqOp = math.max(_, _),
+      combOp = _ + _
+    ).collect.foreach(println)
+//输出结果：
+(hadoop,3)
+(storm,8)
+(spark,7)
+```
 
-val dataRDD1 = 
-	sparkContext.makeRDD(List(("a",1),("b",2),("c",3)))
-val dataRDD2 = 
-	dataRDD1.aggregateByKey(0)(_+_,_+_)
+这里使用了 `numSlices = 2` 指定 aggregateByKey 父操作 parallelize 的分区数量为 2，其执行流程如下：
 
+[![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208081730931.png)](https://github.com/SamuelZhu12/God-Of-BigData/blob/master/pictures/spark-aggregateByKey.png)
+
+基于同样的执行流程，如果 `numSlices = 1`，则意味着只有输入一个分区，则其最后一步 combOp 相当于是无效的，执行结果为：
 
 ```
+(hadoop,3)
+(storm,8)
+(spark,4)
+```
+
+同样的，如果每个单词对一个分区，即 `numSlices = 6`，此时相当于求和操作，执行结果为：
+
+```
+(hadoop,5)
+(storm,14)
+(spark,7)
+```
+
+`aggregateByKey(zeroValue = 0,numPartitions = 3)` 的第二个参数 `numPartitions` 决定的是输出 RDD 的分区数量，想要验证这个问题，可以对上面代码进行改写，使用 `getNumPartitions` 方法获取分区数量：
+
+```scala
+sc.parallelize(list,numSlices = 6).aggregateByKey(zeroValue = 0,numPartitions = 3)(
+  seqOp = math.max(_, _),
+  combOp = _ + _
+).getNumPartitions
+```
+
+[![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208081730929.png)](
 
 21）foldByKey
 
@@ -546,12 +565,12 @@ val combineRDD: RDD[(String,(Int,Int))] = input.combineByKey(
 函数说明：在一个（K,V）的RDD上调用，K必须实现Orderd接口（特质），返回一个按照key进行排序的RDD
 
 ```scala
-def sortByKey(ascending:Boolean = true,numPartitions:Int=self.partitions.length):RDD[(K,V)]
-//函数签名
-
-val dataRDD1 = sparkContext.makeRDD(List(("a",1),("b",2),("c",3)))
-val sortRDD1:RDD[(String,Int)] = dataRDD1.sortByKey(true)
-val sortRDD1:RDD[(String,Int)] = dataRDD1.sortByKey(false)
+val list01 = List((100, "hadoop"), (90, "spark"), (120, "storm"))
+sc.parallelize(list01).sortByKey(ascending = false).foreach(println)
+// 输出
+(120,storm)
+(100,hadoop)
+(90,spark)
 ```
 
 24）join
@@ -572,31 +591,46 @@ rdd.join(rdd1).collect().foreach(println)
 函数说明：在类型为(K,V)和(K,W)的RDD上调用，返回一个(K,(Iterable<V>,iterable<W>))类型的RDD
 
 ```scala
-def cogroup[W](other:RDD[K,W]):RDD[(K,(Iterable[V],Iterable[W]))]
-//函数签名
+val list01 = List((1, "a"),(1, "a"), (2, "b"), (3, "e"))
+val list02 = List((1, "A"), (2, "B"), (3, "E"))
+val list03 = List((1, "[ab]"), (2, "[bB]"), (3, "eE"),(3, "eE"))
+sc.parallelize(list01).cogroup(sc.parallelize(list02),sc.parallelize(list03)).foreach(println)
 
-val dataRDD1 = sparkContext.makeRDD(List(("a",1),("a",2),("c",3)))
-val dataRDD1 = sparkContext.makeRDD(List(("a",1),("c",2),("c",3)))
-
-val value: RDD[(String, (Iterable[Int],Iterable[Int]))] = 
-dataRDD1.cogroup
+// 输出： 同一个 RDD 中的元素先按照 key 进行分组，然后再对不同 RDD 中的元素按照 key 进行分组
+(1,(CompactBuffer(a, a),CompactBuffer(A),CompactBuffer([ab])))
+(3,(CompactBuffer(e),CompactBuffer(E),CompactBuffer(eE, eE)))
+(2,(CompactBuffer(b),CompactBuffer(B),CompactBuffer([bB])))
 ```
 
 **cogroup返回的是一个元组，元组的value是List的集合（Iterable），如(K,(Iterable[V],Iterable[W]))，Iterable[V]中是第一个RDD中key相同的value，Iterable[W]中是第二个RDD中key相同的value。一般在开发过程中用的较少，作为中间过程存在。**
 
 ### 3.5 RDD行动算子
 
+| Action（动作）                                     | Meaning（含义）                                              |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| **reduce**(*func*)                                 | 使用函数*func*执行归约操作                                   |
+| **collect**()                                      | 以一个 array 数组的形式返回 dataset 的所有元素，适用于小结果集。 |
+| **count**()                                        | 返回 dataset 中元素的个数。                                  |
+| **first**()                                        | 返回 dataset 中的第一个元素，等价于 take(1)。                |
+| **take**(*n*)                                      | 将数据集中的前 *n* 个元素作为一个 array 数组返回。           |
+| **takeSample**(*withReplacement*, *num*, [*seed*]) | 对一个 dataset 进行随机抽样                                  |
+| **takeOrdered**(*n*, *[ordering]*)                 | 按自然顺序（natural order）或自定义比较器（custom comparator）排序后返回前 *n* 个元素。只适用于小结果集，因为所有数据都会被加载到驱动程序的内存中进行排序。 |
+| **saveAsTextFile**(*path*)                         | 将 dataset 中的元素以文本文件的形式写入本地文件系统、HDFS 或其它 Hadoop 支持的文件系统中。Spark 将对每个元素调用 toString 方法，将元素转换为文本文件中的一行记录。 |
+| **saveAsSequenceFile**(*path*)                     | 将 dataset 中的元素以 Hadoop SequenceFile 的形式写入到本地文件系统、HDFS 或其它 Hadoop 支持的文件系统中。该操作要求 RDD 中的元素需要实现 Hadoop 的 Writable 接口。对于 Scala 语言而言，它可以将 Spark 中的基本数据类型自动隐式转换为对应 Writable 类型。(目前仅支持 Java and Scala) |
+| **saveAsObjectFile**(*path*)                       | 使用 Java 序列化后存储，可以使用 `SparkContext.objectFile()` 进行加载。(目前仅支持 Java and Scala) |
+| **countByKey**()                                   | 计算每个键出现的次数。                                       |
+| **foreach**(*func*)                                | 遍历 RDD 中每个元素，并对其执行*fun*函数                     |
+
 1）reduce
 
 函数说明：聚集RDD中的所有元素，先聚合分区内数据，再聚合分区间数据
 
 ```scala
-def reduce(f:(T,T)=>T):T
-//函数签名
+ val list = List(1, 2, 3, 4, 5)
+sc.parallelize(list).reduce((x, y) => x + y)
+sc.parallelize(list).reduce(_ + _)
 
-val rdd:RDD[Int] = sc.makeRDD(List(1,2,3,4))
-
-val reduceResult: Int = rdd.reduce(_+_)
+// 输出 15
 ```
 
 2）collect
@@ -653,16 +687,24 @@ println(takeResult.mkString(","))
 
 6）takeOrdered
 
-函数说明：返回该RDD排序后的前n个元素组成的数组
+函数说明：按自然顺序（natural order）或自定义比较器（custom comparator）排序后返回前 *n* 个元素。需要注意的是 `takeOrdered` 使用隐式参数进行隐式转换，以下为其源码。所以在使用自定义排序时，需要继承 `Ordering[T]` 实现自定义比较器，然后将其作为隐式参数引入。
 
 ```scala
-def takeOrdered(num:Int)(implicit ord:Ordering[T]):Array[T]
-//
+def takeOrdered(num: Int)(implicit ord: Ordering[T]): Array[T] = withScope {
+  .........
+}
+// 继承 Ordering[T],实现自定义比较器，按照 value 值的长度进行排序
+class CustomOrdering extends Ordering[(Int, String)] {
+    override def compare(x: (Int, String), y: (Int, String)): Int
+    = if (x._2.length > y._2.length) 1 else -1
+}
 
-val rdd:RDD[Int] = sc.makeRDD(List(1,3,2,4))
+val list = List((1, "hadoop"), (1, "storm"), (1, "azkaban"), (1, "hive"))
+//  引入隐式默认值
+implicit val implicitOrdering = new CustomOrdering
+sc.parallelize(list).takeOrdered(5)
 
-val result: Array[Int] = rdd.takeOrdered(2) //取2个数据排序
-
+// 输出： Array((1,hive), (1,storm), (1,hadoop), (1,azkaban)
 ```
 
 7）aggregate
@@ -694,11 +736,10 @@ val foldResult: Int = rdd.fold(0)(_+_)
 函数说明：统计每种key的个数
 
 ```scala
-def countByKey():Map[K,Long]
-//
+val list = List(("hadoop", 10), ("hadoop", 10), ("storm", 3), ("storm", 3), ("azkaban", 1))
+sc.parallelize(list).countByKey()
 
-val rdd:RDD[(Int,String)] = sc.makeRDD(List((1,"a"),(1,"a",(2,"b"),(3,"c"),(3,"c")))
-val result: collection.Map[Int,Long] = rdd.countByKey()
+// 输出： Map(hadoop -> 2, storm -> 2, azkaban -> 1)
 ```
 
 10）save相关算子
@@ -771,8 +812,14 @@ RDD任务切分中间分为：Application、Job、Stage和Task
 
 - Application：初始化一个SparkContext即生成一个Application
 - Job：一个Action算子就会生成一个Job
-- Stage：Stage等于宽依赖(ShuffleDependency)的个数加1；
-- Task：一个Stage的阶段中，最后一个RDD的分区个数就是Task的个数。
+- Stage：一种并行计算的task。Stage等于宽依赖(ShuffleDependency)的个数加1；
+- Task：在map(reduce)阶段并行的个数。一个Stage的阶段中，最后一个RDD的分区个数就是Task的个数。
+
+```Application->Job->Stage->Task 每一层都是 1 对 n 的关系```
+
+分组会产生shuffle，shuffle会落地产生磁盘文件，如果要进行网络传输那么就会有一个序列化的过程，在数据落到磁盘的时候会进行压缩（默认hash分区）
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208091034165.png" alt="在这里插入图片描述" style="zoom:50%;" />
 
 ### 3.9 RDD持久化
 
@@ -818,389 +865,3 @@ longAccumulator()
 <img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208051612709.png" style="zoom:33%;" />
 
 **参考：尚硅谷Spark教程**
-
-
-
-# Transformation 和 Action 常用算子
-
-## 一、Transformation
-
-spark 常用的 Transformation 算子如下表：
-
-| Transformation 算子                                          | Meaning（含义）                                              |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| **map**(*func*)                                              | 对原 RDD 中每个元素运用 *func* 函数，并生成新的 RDD          |
-| **filter**(*func*)                                           | 对原 RDD 中每个元素使用*func* 函数进行过滤，并生成新的 RDD   |
-| **flatMap**(*func*)                                          | 与 map 类似，但是每一个输入的 item 被映射成 0 个或多个输出的 items（ *func* 返回类型需要为 Seq ）。 |
-| **mapPartitions**(*func*)                                    | 与 map 类似，但函数单独在 RDD 的每个分区上运行， *func*函数的类型为 Iterator<T> => Iterator<U> ，其中 T 是 RDD 的类型，即 RDD[T] |
-| **mapPartitionsWithIndex**(*func*)                           | 与 mapPartitions 类似，但 *func* 类型为 (Int, Iterator<T>) => Iterator<U> ，其中第一个参数为分区索引 |
-| **sample**(*withReplacement*, *fraction*, *seed*)            | 数据采样，有三个可选参数：设置是否放回（withReplacement）、采样的百分比（*fraction*）、随机数生成器的种子（seed）； |
-| **union**(*otherDataset*)                                    | 合并两个 RDD                                                 |
-| **intersection**(*otherDataset*)                             | 求两个 RDD 的交集                                            |
-| **distinct**([*numTasks*]))                                  | 去重                                                         |
-| **groupByKey**([*numTasks*])                                 | 按照 key 值进行分区，即在一个 (K, V) 对的 dataset 上调用时，返回一个 (K, Iterable<V>) **Note:** 如果分组是为了在每一个 key 上执行聚合操作（例如，sum 或 average)，此时使用 `reduceByKey` 或 `aggregateByKey` 性能会更好 **Note:** 默认情况下，并行度取决于父 RDD 的分区数。可以传入 `numTasks` 参数进行修改。 |
-| **reduceByKey**(*func*, [*numTasks*])                        | 按照 key 值进行分组，并对分组后的数据执行归约操作。          |
-| **aggregateByKey**(*zeroValue*,*numPartitions*)(*seqOp*, *combOp*, [*numTasks*]) | 当调用（K，V）对的数据集时，返回（K，U）对的数据集，其中使用给定的组合函数和 zeroValue 聚合每个键的值。与 groupByKey 类似，reduce 任务的数量可通过第二个参数进行配置。 |
-| **sortByKey**([*ascending*], [*numTasks*])                   | 按照 key 进行排序，其中的 key 需要实现 Ordered 特质，即可比较 |
-| **join**(*otherDataset*, [*numTasks*])                       | 在一个 (K, V) 和 (K, W) 类型的 dataset 上调用时，返回一个 (K, (V, W)) pairs 的 dataset，等价于内连接操作。如果想要执行外连接，可以使用 `leftOuterJoin`, `rightOuterJoin` 和 `fullOuterJoin` 等算子。 |
-| **cogroup**(*otherDataset*, [*numTasks*])                    | 在一个 (K, V) 对的 dataset 上调用时，返回一个 (K, (Iterable<V>, Iterable<W>)) tuples 的 dataset。 |
-| **cartesian**(*otherDataset*)                                | 在一个 T 和 U 类型的 dataset 上调用时，返回一个 (T, U) 类型的 dataset（即笛卡尔积）。 |
-| **coalesce**(*numPartitions*)                                | 将 RDD 中的分区数减少为 numPartitions。                      |
-| **repartition**(*numPartitions*)                             | 随机重新调整 RDD 中的数据以创建更多或更少的分区，并在它们之间进行平衡。 |
-| **repartitionAndSortWithinPartitions**(*partitioner*)        | 根据给定的 partitioner（分区器）对 RDD 进行重新分区，并对分区中的数据按照 key 值进行排序。这比调用 `repartition` 然后再 sorting（排序）效率更高，因为它可以将排序过程推送到 shuffle 操作所在的机器。 |
-
-下面分别给出这些算子的基本使用示例：
-
-### 1.1 map
-
-```
-val list = List(1,2,3)
-sc.parallelize(list).map(_ * 10).foreach(println)
-
-// 输出结果： 10 20 30 （这里为了节省篇幅去掉了换行,后文亦同）
-```
-
-### 1.2 filter
-
-```
-val list = List(3, 6, 9, 10, 12, 21)
-sc.parallelize(list).filter(_ >= 10).foreach(println)
-
-// 输出： 10 12 21
-```
-
-### 1.3 flatMap
-
-`flatMap(func)` 与 `map` 类似，但每一个输入的 item 会被映射成 0 个或多个输出的 items（ *func* 返回类型需要为 `Seq`）。
-
-```
-val list = List(List(1, 2), List(3), List(), List(4, 5))
-sc.parallelize(list).flatMap(_.toList).map(_ * 10).foreach(println)
-
-// 输出结果 ： 10 20 30 40 50
-```
-
-flatMap 这个算子在日志分析中使用概率非常高，这里进行一下演示：拆分输入的每行数据为单个单词，并赋值为 1，代表出现一次，之后按照单词分组并统计其出现总次数，代码如下：
-
-```
-val lines = List("spark flume spark",
-                 "hadoop flume hive")
-sc.parallelize(lines).flatMap(line => line.split(" ")).
-map(word=>(word,1)).reduceByKey(_+_).foreach(println)
-
-// 输出：
-(spark,2)
-(hive,1)
-(hadoop,1)
-(flume,2)
-```
-
-### 1.4 mapPartitions
-
-与 map 类似，但函数单独在 RDD 的每个分区上运行， *func*函数的类型为 `Iterator<T> => Iterator<U>` (其中 T 是 RDD 的类型)，即输入和输出都必须是可迭代类型。
-
-```
-val list = List(1, 2, 3, 4, 5, 6)
-sc.parallelize(list, 3).mapPartitions(iterator => {
-  val buffer = new ListBuffer[Int]
-  while (iterator.hasNext) {
-    buffer.append(iterator.next() * 100)
-  }
-  buffer.toIterator
-}).foreach(println)
-//输出结果
-100 200 300 400 500 600
-```
-
-### 1.5 mapPartitionsWithIndex
-
-与 mapPartitions 类似，但 *func* 类型为 `(Int, Iterator<T>) => Iterator<U>` ，其中第一个参数为分区索引。
-
-```
-val list = List(1, 2, 3, 4, 5, 6)
-sc.parallelize(list, 3).mapPartitionsWithIndex((index, iterator) => {
-  val buffer = new ListBuffer[String]
-  while (iterator.hasNext) {
-    buffer.append(index + "分区:" + iterator.next() * 100)
-  }
-  buffer.toIterator
-}).foreach(println)
-//输出
-0 分区:100
-0 分区:200
-1 分区:300
-1 分区:400
-2 分区:500
-2 分区:600
-```
-
-### 1.6 sample
-
-数据采样。有三个可选参数：设置是否放回 (withReplacement)、采样的百分比 (fraction)、随机数生成器的种子 (seed) ：
-
-```
-val list = List(1, 2, 3, 4, 5, 6)
-sc.parallelize(list).sample(withReplacement = false, fraction = 0.5).foreach(println)
-```
-
-### 1.7 union
-
-合并两个 RDD：
-
-```
-val list1 = List(1, 2, 3)
-val list2 = List(4, 5, 6)
-sc.parallelize(list1).union(sc.parallelize(list2)).foreach(println)
-// 输出: 1 2 3 4 5 6
-```
-
-### 1.8 intersection
-
-求两个 RDD 的交集：
-
-```
-val list1 = List(1, 2, 3, 4, 5)
-val list2 = List(4, 5, 6)
-sc.parallelize(list1).intersection(sc.parallelize(list2)).foreach(println)
-// 输出:  4 5
-```
-
-### 1.9 distinct
-
-去重：
-
-```
-val list = List(1, 2, 2, 4, 4)
-sc.parallelize(list).distinct().foreach(println)
-// 输出: 4 1 2
-```
-
-### 1.10 groupByKey
-
-按照键进行分组：
-
-```
-val list = List(("hadoop", 2), ("spark", 3), ("spark", 5), ("storm", 6), ("hadoop", 2))
-sc.parallelize(list).groupByKey().map(x => (x._1, x._2.toList)).foreach(println)
-
-//输出：
-(spark,List(3, 5))
-(hadoop,List(2, 2))
-(storm,List(6))
-```
-
-### 1.11 reduceByKey
-
-按照键进行归约操作：
-
-```
-val list = List(("hadoop", 2), ("spark", 3), ("spark", 5), ("storm", 6), ("hadoop", 2))
-sc.parallelize(list).reduceByKey(_ + _).foreach(println)
-
-//输出
-(spark,8)
-(hadoop,4)
-(storm,6)
-```
-
-### 1.12 sortBy & sortByKey
-
-按照键进行排序：
-
-```
-val list01 = List((100, "hadoop"), (90, "spark"), (120, "storm"))
-sc.parallelize(list01).sortByKey(ascending = false).foreach(println)
-// 输出
-(120,storm)
-(100,hadoop)
-(90,spark)
-```
-
-按照指定元素进行排序：
-
-```
-val list02 = List(("hadoop",100), ("spark",90), ("storm",120))
-sc.parallelize(list02).sortBy(x=>x._2,ascending=false).foreach(println)
-// 输出
-(storm,120)
-(hadoop,100)
-(spark,90)
-```
-
-### 1.13 join
-
-在一个 (K, V) 和 (K, W) 类型的 Dataset 上调用时，返回一个 (K, (V, W)) 的 Dataset，等价于内连接操作。如果想要执行外连接，可以使用 `leftOuterJoin`, `rightOuterJoin` 和 `fullOuterJoin` 等算子。
-
-```
-val list01 = List((1, "student01"), (2, "student02"), (3, "student03"))
-val list02 = List((1, "teacher01"), (2, "teacher02"), (3, "teacher03"))
-sc.parallelize(list01).join(sc.parallelize(list02)).foreach(println)
-
-// 输出
-(1,(student01,teacher01))
-(3,(student03,teacher03))
-(2,(student02,teacher02))
-```
-
-### 1.14 cogroup
-
-在一个 (K, V) 对的 Dataset 上调用时，返回多个类型为 (K, (Iterable<V>, Iterable<W>)) 的元组所组成的 Dataset。
-
-```
-val list01 = List((1, "a"),(1, "a"), (2, "b"), (3, "e"))
-val list02 = List((1, "A"), (2, "B"), (3, "E"))
-val list03 = List((1, "[ab]"), (2, "[bB]"), (3, "eE"),(3, "eE"))
-sc.parallelize(list01).cogroup(sc.parallelize(list02),sc.parallelize(list03)).foreach(println)
-
-// 输出： 同一个 RDD 中的元素先按照 key 进行分组，然后再对不同 RDD 中的元素按照 key 进行分组
-(1,(CompactBuffer(a, a),CompactBuffer(A),CompactBuffer([ab])))
-(3,(CompactBuffer(e),CompactBuffer(E),CompactBuffer(eE, eE)))
-(2,(CompactBuffer(b),CompactBuffer(B),CompactBuffer([bB])))
-```
-
-### 1.15 cartesian
-
-计算笛卡尔积：
-
-```
-val list1 = List("A", "B", "C")
-val list2 = List(1, 2, 3)
-sc.parallelize(list1).cartesian(sc.parallelize(list2)).foreach(println)
-
-//输出笛卡尔积
-(A,1)
-(A,2)
-(A,3)
-(B,1)
-(B,2)
-(B,3)
-(C,1)
-(C,2)
-(C,3)
-```
-
-### 1.16 aggregateByKey
-
-当调用（K，V）对的数据集时，返回（K，U）对的数据集，其中使用给定的组合函数和 zeroValue 聚合每个键的值。与 `groupByKey` 类似，reduce 任务的数量可通过第二个参数 `numPartitions` 进行配置。示例如下：
-
-```
-// 为了清晰，以下所有参数均使用具名传参
-val list = List(("hadoop", 3), ("hadoop", 2), ("spark", 4), ("spark", 3), ("storm", 6), ("storm", 8))
-sc.parallelize(list,numSlices = 2).aggregateByKey(zeroValue = 0,numPartitions = 3)(
-      seqOp = math.max(_, _),
-      combOp = _ + _
-    ).collect.foreach(println)
-//输出结果：
-(hadoop,3)
-(storm,8)
-(spark,7)
-```
-
-这里使用了 `numSlices = 2` 指定 aggregateByKey 父操作 parallelize 的分区数量为 2，其执行流程如下：
-
-[![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208081730931.png)](https://github.com/SamuelZhu12/God-Of-BigData/blob/master/pictures/spark-aggregateByKey.png)
-
-基于同样的执行流程，如果 `numSlices = 1`，则意味着只有输入一个分区，则其最后一步 combOp 相当于是无效的，执行结果为：
-
-```
-(hadoop,3)
-(storm,8)
-(spark,4)
-```
-
-同样的，如果每个单词对一个分区，即 `numSlices = 6`，此时相当于求和操作，执行结果为：
-
-```
-(hadoop,5)
-(storm,14)
-(spark,7)
-```
-
-`aggregateByKey(zeroValue = 0,numPartitions = 3)` 的第二个参数 `numPartitions` 决定的是输出 RDD 的分区数量，想要验证这个问题，可以对上面代码进行改写，使用 `getNumPartitions` 方法获取分区数量：
-
-```
-sc.parallelize(list,numSlices = 6).aggregateByKey(zeroValue = 0,numPartitions = 3)(
-  seqOp = math.max(_, _),
-  combOp = _ + _
-).getNumPartitions
-```
-
-[![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208081730929.png)](https://github.com/SamuelZhu12/God-Of-BigData/blob/master/pictures/spark-getpartnum.png)
-
-## 二、Action
-
-Spark 常用的 Action 算子如下：
-
-| Action（动作）                                     | Meaning（含义）                                              |
-| -------------------------------------------------- | ------------------------------------------------------------ |
-| **reduce**(*func*)                                 | 使用函数*func*执行归约操作                                   |
-| **collect**()                                      | 以一个 array 数组的形式返回 dataset 的所有元素，适用于小结果集。 |
-| **count**()                                        | 返回 dataset 中元素的个数。                                  |
-| **first**()                                        | 返回 dataset 中的第一个元素，等价于 take(1)。                |
-| **take**(*n*)                                      | 将数据集中的前 *n* 个元素作为一个 array 数组返回。           |
-| **takeSample**(*withReplacement*, *num*, [*seed*]) | 对一个 dataset 进行随机抽样                                  |
-| **takeOrdered**(*n*, *[ordering]*)                 | 按自然顺序（natural order）或自定义比较器（custom comparator）排序后返回前 *n* 个元素。只适用于小结果集，因为所有数据都会被加载到驱动程序的内存中进行排序。 |
-| **saveAsTextFile**(*path*)                         | 将 dataset 中的元素以文本文件的形式写入本地文件系统、HDFS 或其它 Hadoop 支持的文件系统中。Spark 将对每个元素调用 toString 方法，将元素转换为文本文件中的一行记录。 |
-| **saveAsSequenceFile**(*path*)                     | 将 dataset 中的元素以 Hadoop SequenceFile 的形式写入到本地文件系统、HDFS 或其它 Hadoop 支持的文件系统中。该操作要求 RDD 中的元素需要实现 Hadoop 的 Writable 接口。对于 Scala 语言而言，它可以将 Spark 中的基本数据类型自动隐式转换为对应 Writable 类型。(目前仅支持 Java and Scala) |
-| **saveAsObjectFile**(*path*)                       | 使用 Java 序列化后存储，可以使用 `SparkContext.objectFile()` 进行加载。(目前仅支持 Java and Scala) |
-| **countByKey**()                                   | 计算每个键出现的次数。                                       |
-| **foreach**(*func*)                                | 遍历 RDD 中每个元素，并对其执行*fun*函数                     |
-
-### 2.1 reduce
-
-使用函数*func*执行归约操作：
-
-```
- val list = List(1, 2, 3, 4, 5)
-sc.parallelize(list).reduce((x, y) => x + y)
-sc.parallelize(list).reduce(_ + _)
-
-// 输出 15
-```
-
-### 2.2 takeOrdered
-
-按自然顺序（natural order）或自定义比较器（custom comparator）排序后返回前 *n* 个元素。需要注意的是 `takeOrdered` 使用隐式参数进行隐式转换，以下为其源码。所以在使用自定义排序时，需要继承 `Ordering[T]` 实现自定义比较器，然后将其作为隐式参数引入。
-
-```
-def takeOrdered(num: Int)(implicit ord: Ordering[T]): Array[T] = withScope {
-  .........
-}
-```
-
-自定义规则排序：
-
-```
-// 继承 Ordering[T],实现自定义比较器，按照 value 值的长度进行排序
-class CustomOrdering extends Ordering[(Int, String)] {
-    override def compare(x: (Int, String), y: (Int, String)): Int
-    = if (x._2.length > y._2.length) 1 else -1
-}
-
-val list = List((1, "hadoop"), (1, "storm"), (1, "azkaban"), (1, "hive"))
-//  引入隐式默认值
-implicit val implicitOrdering = new CustomOrdering
-sc.parallelize(list).takeOrdered(5)
-
-// 输出： Array((1,hive), (1,storm), (1,hadoop), (1,azkaban)
-```
-
-### 2.3 countByKey
-
-计算每个键出现的次数：
-
-```
-val list = List(("hadoop", 10), ("hadoop", 10), ("storm", 3), ("storm", 3), ("azkaban", 1))
-sc.parallelize(list).countByKey()
-
-// 输出： Map(hadoop -> 2, storm -> 2, azkaban -> 1)
-```
-
-### 2.4 saveAsTextFile
-
-将 dataset 中的元素以文本文件的形式写入本地文件系统、HDFS 或其它 Hadoop 支持的文件系统中。Spark 将对每个元素调用 toString 方法，将元素转换为文本文件中的一行记录。
-
-```
-val list = List(("hadoop", 10), ("hadoop", 10), ("storm", 3), ("storm", 3), ("azkaban", 1))
-sc.parallelize(list).saveAsTextFile("/usr/file/temp")https://github.com/about)
-```
