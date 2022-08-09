@@ -109,15 +109,55 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 
 ## 4. Yarn资源调度工作机制
 
-- **基本概念**：
+### 4.1 Yarn框架
 
-NodeManager是Yarn中单节点的代理，它管理Hadoop集群中单个计算节点，其需要与应用程序的ApplicationMaster和集群资源管理器RM交互，从ApplicationMaster上接收到相关Container的执行命令(启动，停止Container)；并向RM汇报各个Container的运行状态和节点健康状态，并领取相关的Container的执行命令；其主要的功能包括与RM保持通信，管理Container的生命周期，监控每个Container的资源使用情况，追踪节点健康状况，管理日志以及不同应用程序用到的附属服务;
+![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208081411082.png)
 
-NodeManager通过两个RPC协议与RM和各个ApplicationMaster进行通信：
+- ResourceManager
+
+`ResourceManager` 通常在独立的机器上以后台进程的形式运行，它是整个集群资源的主要协调者和管理者。`ResourceManager` 负责给用户提交的所有应用程序分配资源，它根据应用程序优先级、队列容量、ACLs、数据位置等信息，做出决策，然后以共享的、安全的、多租户的方式制定分配策略，调度集群资源。
+
+- NodeManager
 
 
 
 <img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208051653127.png" alt="NodeManager1.png" style="zoom:50%;" />
+
+`NodeManager` 是 YARN 集群中的每个具体节点的管理者。主要负责该节点内所有容器的生命周期的管理，监视资源和跟踪节点健康。具体如下：
+
+​		1. 启动时向 `ResourceManager` 注册并定时发送心跳消息，等待 `ResourceManager` 的指令；
+
+​		2. 维护 `Container` 的生命周期，监控 `Container` 的资源使用情况；
+
+​		3. 管理任务运行时的相关依赖，根据 `ApplicationMaster` 的需要，在启动 `Container` 之前将需要的程序及其依赖拷贝到本地。
+
+​		4. NodeManager通过两个RPC协议与RM和各个ApplicationMaster进行通信：
+
+- ApplicaitonMaster
+
+在用户提交一个应用程序时，YARN 会启动一个轻量级的进程 `ApplicationMaster`。`ApplicationMaster` 负责协调来自 `ResourceManager` 的资源，并通过 `NodeManager` 监视容器内资源的使用情况，同时还负责任务的监控与容错。具体如下：
+
+​		1. 根据应用的运行状态来决定动态计算资源需求；
+
+​		2. 向 `ResourceManager` 申请资源，监控申请的资源的使用情况；
+
+​		3. 跟踪任务状态和进度，报告资源的使用情况和应用的进度信息；
+
+​		4. 负责任务的容错。
+
+- Container
+
+​		`Container` 是 YARN 中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等。当 AM 向 RM 申请资源时，RM 为 AM 返回的资		源是用 `Container` 表示的。YARN 会为每个任务分配一个 `Container`，该任务只能使用该 `Container` 中描述的资源。`ApplicationMaster` 可在`Container` 		内运行任何类型的任务。例如，`MapReduce ApplicationMaster` 请求一个容器来启动 map 或 reduce 任务，而 `Giraph ApplicationMaster` 请求一个容器       		来运行 Giraph 任务。
+
+### 4.2 Yarn工作机制
+
+![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208081423625.png)
+
+
+
+
+
+
 
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202207291733560.png)
 
@@ -125,8 +165,8 @@ NodeManager通过两个RPC协议与RM和各个ApplicationMaster进行通信：
 1. Mr程序提交到客户端所在节点后会创建一个YarnRunner（本地模式时是LocalRunner）；
 2. 由Yarn向ResourceManager申请一个Application ；
 3. RM返回Application资源提交路径和application_id；
-4. Yarn提交job运行所需资源：**切片文件job.split，参数文件job.xml，代码xx.jar**;
-5. 申请mapreduceAppMaster，RM将请求初始化成一个Task，并放入任务队列中；
+4. Yarn向集群提交job运行所需资源：**切片文件job.split，参数文件job.xml，代码xx.jar**;
+5. 客户端向RM申请mapreduceApplicationMaster(AM)，RM将请求初始化成一个Task，并放入任务队列中；
 6. NodeManager从RM中领取任务；
 7. NM创建一个Container，创建一个MRAppmaster，并从application集群路径中读取切片信息job.split；
 8. NM根据切片信息向RM申请相应数量的MapTask；
@@ -177,7 +217,7 @@ NodeManager通过两个RPC协议与RM和各个ApplicationMaster进行通信：
 
 ## 6. Hadoop解决数据倾斜的方法
 
-**数据倾斜：Hadoop中为了方便分布式计算对数据进行切分，但出现因数据本身而导致切分不均匀的情况，有些数据多，有些数据少，从而导致后续计算中不同reducer的负载不同，影响性能**
+**数据倾斜：Hadoop中为了方便分布式计算对数据进行切分，但出现因数据本身而导致切分不均匀的情况，有些数据多，有些数据少，从而导致后续计算中不同reducer的负载不同，影响性能。具体来说，当map阶段结束时，由于环形缓冲区会对数据的key进行partition操作，所以同一个分区中数据的key多半相同，而reducer会拉取不同maptask中指定分区的数据，这意味着相同的key会进入同一个reducer进行聚合，如果key之间数量差距过大，则会造成不同的reducer之间的负载不均衡**
 
 1) 提前在map进行combine，减少数据的传输量
 
