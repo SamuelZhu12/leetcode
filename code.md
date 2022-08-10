@@ -1,5 +1,5 @@
+# 目录
 [TOC]
-
 # LRU
 
 用hashmap(dict类)和链表构造一个双向数据结构，即Python中的OrderedDict类。但需要自己去构造该类
@@ -692,7 +692,99 @@ class Solution(object):
         return res
 ```
 
+## K 次取反后最大化的数组和
 
+https://leetcode.cn/problems/maximize-sum-of-array-after-k-negations/
+
+```python
+class Solution(object):
+    def largestSumAfterKNegations(self, nums, k):
+        """
+        :type nums: List[int]
+        :type k: int
+        :rtype: int
+        """
+        nums = sorted(nums,key = abs,reverse = True)
+        for i in range(len(nums)):
+            if nums[i] < 0 and k > 0:
+                nums[i] = -nums[i]
+                k -= 1
+        if k > 0:
+            nums[-1] *= pow(-1,k)
+        return sum(nums)
+```
+
+## 分发糖果
+
+https://leetcode.cn/problems/candy/
+
+```python
+class Solution(object):
+    def candy(self, ratings):
+        """
+        :type ratings: List[int]
+        :rtype: int
+        """
+        # 局部最优:右边的孩子比左边的孩子大，则多一颗糖果。左边的孩子比右边的大，则左边比右边多一颗糖果；全局最优：所有的孩子中，相邻的孩子中表现好的会多分配一些糖果。 没有必要考虑相等的因素，因为题目中没有提及，只需要满足右边界ratings[i+1]>ratings[i]则res[i+1] = res[i] + 1；左边界ratings[i] > ratings[i+1]，res[i]= max(res[i],res[i+1]+1)
+        res = [1] * len(ratings)
+        for i in range(len(ratings)-1):
+            if ratings[i+1] > ratings[i]:
+                res[i+1] = res[i] + 1
+        for i in range(len(ratings)-2,-1,-1):
+            if ratings[i] > ratings[i+1]:
+                res[i] = max(res[i],res[i+1]+1) # 维护满足右边界的res条件
+
+        return sum(res)
+```
+
+## 柠檬水找零
+
+https://leetcode.cn/problems/lemonade-change/submissions/
+
+```python
+# 局部：解决每次的找零问题，分支付5、10、20元三种情况解决，当支付金额为20元时，要么找10+5，要么找5+5+5，但是5更利于找钱，所以优先考虑10+5，尽可能少消耗5元，手上的5元越多，满足每一种支付金额的可能性就越大，这就是局部最优的情况。
+# 整体：每一次都能顺利找钱，最后可以满足条件
+class Solution:
+    def lemonadeChange(self, bills: List[int]) -> bool:
+        five, ten, twenty = 0,0,0
+        for i in range(len(bills)):
+            if bills[i] == 5:
+                five += 1
+            elif bills[i] == 10:
+                if five < 1 : return False
+                five -= 1
+                ten += 1
+            elif bills[i] == 20:
+                if ten > 0 and five > 0:
+                    ten -= 1
+                    five -= 1
+                elif five > 2:
+                    five -= 3
+                else:return False
+        return True
+```
+
+## 根据身高重建队列
+
+https://leetcode.cn/problems/queue-reconstruction-by-height/
+
+<img src="../../Library/Application Support/typora-user-images/image-20220809194334683.png" alt="image-20220809194334683" style="zoom:67%;" />
+
+```python
+class Solution(object):
+    def reconstructQueue(self, people):
+        """
+        :type people: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        # 先按照身高h排列由大到小排列，再按照序号k由小到大排列
+        people.sort(key=lambda x: (-x[0],x[1]))
+        res = []
+        # 排列结束后，发现每一次按照由小到大插入res中的顺序都满足题目条件
+        for i in range(len(people)):
+            res.insert(people[i][1],people[i])
+        return res
+```
 
 # 合并有序链表
 
