@@ -6,7 +6,7 @@
 
 1. 客户端(HDFS Client)通过Distributed FileSystem分布式文件系统向NameNode请求**下载**文件，由NameNode返回目标文件的元数据；
 2. 由FSDataInputStream请求读数据DataNode1上的block1，由DataNode1传输回数据；
-3. 再向block2发送读数据请求...再想block3发送请求...
+3. 再向block2发送读数据请求...再向block3发送请求...
 
 ### 1.2 写流程
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202207291733048.png)
@@ -166,10 +166,10 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 2. 由Yarn向ResourceManager申请一个Application ；
 3. RM返回Application资源提交路径和application_id；
 4. Yarn向集群提交job运行所需资源：**切片文件job.split，参数文件job.xml，代码xx.jar**;
-5. 客户端向RM申请mapreduceApplicationMaster(AM)，RM将请求初始化成一个Task，并放入任务队列中；
+5. 客户端向RM申请mapreduceApplicationMaster(AM)，RM将请求初始化成一个Task，并放入任务队列(Scheduler)中；
 6. NodeManager从RM中领取任务；
 7. NM创建一个Container，创建一个MRAppmaster，并从application集群路径中读取切片信息job.split；
-8. NM根据切片信息向RM申请相应数量的MapTask；
+8. Application Master根据切片信息向RM申请相应数量的MapTask；
 9. 其他NM也领取相应任务，但不建立mrAppMaster，由第一个NM中的mrAppMaster发起启动其他NM中MapTask和Yarn Child的指令；
 10. 不同的NM的Container中执行各自的MapTask，将各自的数据按照分区拉到磁盘；（**此时Map阶段已经结束**）
 11. NM向RM申请Container运行ReduceTask，对应进程也是Yarn Child；
