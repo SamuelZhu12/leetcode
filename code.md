@@ -131,7 +131,7 @@ class Solution(object):
 ```
 ## 归并排序
 ```python
-时间复杂度：O(nlogn)。由于归并排序每次都将当前待排序的序列折半成两个子序列递归调用，然后再合并两个有序的子序列，而每次合并两个有序的子序列需要 O(n)的时间复杂度，所以我们可以列出归并排序运行时间 T(n)T(n) 的递归表达式：
+时间复杂度：O(nlogn)。由于归并排序每次都将当前待排序的序列折半成两个子序列递归调用，然后再合并两个有序的子序列，而每次合并两个有序的子序列需要 O(n)的时间复杂度，所以我们可以列出归并排序运行时间 T(n)的递归表达式：
 空间复杂度：O(n)。我们需要额外 O(n)空间的tmp数组，且归并排序递归调用的层数最深为nlogn，所以我们还需要额外的 O(logn) 的栈空间，所需的空间复杂度即为 O(n+logn) = O(n)O(n+logn)=O(n)。
 
 class Solution(object):
@@ -157,7 +157,7 @@ class Solution(object):
                     tmp.append(nums[i])
                     i += 1
             if i > mid: #连接未访问的有序数组元素
-                tmp = tmp + nums[j:r+1]
+                tmp = tmp + nums[j:r+1] # 注意不会包含右边界，故+1
             elif j > r:
                 tmp = tmp + nums[i:mid+1]
             nums[l:r+1] = tmp # 合并两个数组
@@ -519,6 +519,30 @@ class Solution(object):
         return res
 ```
 
+## 和大于等于 target 的最短子数组
+
+https://leetcode.cn/problems/2VG8Kg/
+
+```python
+class Solution(object):
+    def minSubArrayLen(self, target, nums):
+        """
+        :type target: int
+        :type nums: List[int]
+        :rtype: int
+        """
+        if sum(nums) < target : return 0
+        res = len(nums)
+        start,end = 0, 1
+        while end <= len(nums):
+            if sum(nums[start:end]) >= target:
+                res = min(res,end - start)
+                start += 1
+            else:
+                end += 1
+        return res
+```
+
 # 贪心算法
 
 ## 合并区间
@@ -780,7 +804,7 @@ class Solution(object):
         # 先按照身高h排列由大到小排列，再按照序号k由小到大排列
         people.sort(key=lambda x: (-x[0],x[1]))
         res = []
-        # 排列结束后，发现每一次按照由小到大插入res中的顺序都满足题目条件
+        # 排列结束后，发现每一次按照由小到大插入res中的顺序都满足
         for i in range(len(people)):
             res.insert(people[i][1],people[i])
         return res
@@ -1108,7 +1132,25 @@ class Solution(object):
 ```
 
 # 动态规划
-## 带障碍的路径规划
+
+## 不同路径
+
+```python
+class Solution:
+    def uniquePaths(self, m: int, n: int) -> int:
+        dp = [[0 for _ in range(n)] for _ in range(m)]
+        for i in range(m):
+            dp[i][0] = 1
+        for i in range(n):
+            dp[0][i] = 1
+        for i in range(1,m):
+            for j in range(1,n):
+                dp[i][j] = dp[i-1][j] + dp[i][j-1]
+        return dp[-1][-1]
+```
+
+## 不同路径 II （带障碍的路径规划）
+
 ```python
 class Solution(object):
     def uniquePathsWithObstacles(self, obstacleGrid):
@@ -1154,7 +1196,10 @@ class Solution(object):
         return dp[n]
 ```
 
-## 拆分两数
+## 整数拆分
+
+
+
 ```python
 class Solution:
     def integerBreak(self, n: int) -> int:
@@ -1162,13 +1207,16 @@ class Solution:
         dp[2] = 1
         for i in range(3, n + 1):
             # 假设对正整数 i 拆分出的第一个正整数是 j（1 <= j < i），则有以下两种方案：
+            #当j固定时，有 dp[i]=max(j*(i-j), j*dp[i-j])。由于j的取值范围是1到i-1，需要遍历所有的j得到dp[i]的最大值，因此可以得到状态转移方程如下：
             # 1) 将 i 拆分成 j 和 i−j 的和，且 i−j 不再拆分成多个正整数，此时的乘积是 j * (i-j)
             # 2) 将 i 拆分成 j 和 i−j 的和，且 i−j 继续拆分成多个正整数，此时的乘积是 j * dp[i-j]
             for j in range(1, i - 1):
                 dp[i] = max(dp[i], max(j * (i - j), j * dp[i - j]))
         return dp[n]
+```
 
 ## 搜索二叉树数量
+```python
     def numTrees(self, n):
         """
         :type n: int
@@ -1220,7 +1268,46 @@ class Solution(object):
                 dp[i] = prices[i] -prices[i-1]
         return max(max(dp),0)
 ```
+## 分割等和子集
+
+https://leetcode.cn/problems/partition-equal-subset-sum/
+
+```python
+# 当成01背包问题，物品的重量为nums[i]，价值也为nums[i]，背包的容量是sum(nums)/2
+class Solution:
+    def canPartition(self, nums: List[int]) -> bool:
+        n = len(nums)
+        a = sum(nums)
+        if a % 2 == 1: return False
+        target = a // 2
+        dp = [0 for _ in range(10001)] # 根据题目条件进行初始化，要考虑到sum//2的最大可能
+        for i in range(n):
+            for j in range(target,nums[i]-1,-1):
+                dp[j] = max(dp[j - nums[i]] + nums[i],dp[j])
+
+        return dp[target] == target
+```
+
+## 最后一块石头的重量 II
+
+https://leetcode.cn/problems/last-stone-weight-ii/
+
+```python
+# 两块石头两两相碰，相等时抵消，跟上一题原理相同
+# dp[j]的含义：背包装满j容量时的最大价值（该题的价值就是石头重量）
+class Solution:
+    def lastStoneWeightII(self, stones: List[int]) -> int:
+        dp = [0]*1501 # 初始化，最大的背包容量可能值
+        target = sum(stones)//2
+        n = len(stones)
+        for i in range(n):
+            for j in range(target,stones[i]-1,-1): # 倒序遍历，这样不会重复刷新dp[j]
+                dp[j] = max(dp[j-stones[i]]+stones[i],dp[j])
+        return sum(stones) - 2*dp[target]
+```
+
 # dfs岛屿问题
+
 ```python
 class Solution(object):
     def numIslands(self, grid):
