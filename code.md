@@ -543,6 +543,29 @@ class Solution(object):
         return res
 ```
 
+## 字符串相加
+
+```python
+class Solution:
+    def addStrings(self, num1: str, num2: str) -> str:
+        m = len(num1) - 1
+        n = len(num2) - 1
+        res = ''
+        carry = 0
+        while m >=0 or n >= 0 or carry > 0: # carry>0用于补齐最高位有进位的情况
+            a = num1[m] if m >=0 else 0 # 为空的字符串补0
+            b = num2[n] if n >=0 else 0 
+            s = int(a)+int(b) + carry # 加入carry位
+            s1 = s % 10 # 取模得到相加的个位数
+            res = str(s1) + res #拼接字符
+            carry  = s//10
+            m -= 1
+            n -= 1
+        return res
+```
+
+
+
 # 贪心算法
 
 ## 合并区间
@@ -1305,6 +1328,55 @@ class Solution:
                 dp[j] = max(dp[j-stones[i]]+stones[i],dp[j])
         return sum(stones) - 2*dp[target]
 ```
+
+## 找零钱1(用的最少的硬币数量)
+
+https://leetcode.cn/problems/coin-change/
+
+```python
+class Solution:
+    def coinChange(self, coins: List[int], amount: int) -> int:
+        # dp[j] 总金额为j时所需要的最少硬币个数，所以dp要做限制，当只有2块的时候，遇到3块则会因为dp[3-2] = 4而 = amount + 1 ，返回-1
+        # dp[j] = min(dp[j],dp[j-coins[i]] + 1)
+        dp = [a for a in range(amount+1)] # 第一行初始化
+        for i in range(len(coins)):
+            for j in range(coins[i],amount+1):
+                dp[j] = min(dp[j],dp[j-coins[i]] + 1)
+        return dp[-1] if dp[-1] < amount + 1 else -1
+
+
+    #     0   1   2   3   4   5
+    # 1   0   1   2   3   4   5
+    # 2   0   1   1   2   2   3       
+    # 5   0   0   0   0   0   1                    
+```
+
+## 找零钱2（所有可能的硬币组合）
+
+https://leetcode.cn/problems/coin-change-2
+
+```python
+
+class Solution:
+    def change(self, amount: int, coins: List[int]) -> int:
+        # dp[j]代表凑成j的总金额的组合数
+        # dp[j] += dp[j-coins[i]]
+        dp = [0]*(amount+1)
+        dp[0] = 1
+        for i in range(len(coins)):
+            # 多重背包 正序遍历
+            for j in range(coins[i],amount+1):
+                dp[j] += dp[j-coins[i]]  # dp[2][4] = dp[1][4] + dp[2][4 - 2]  在放入1、2硬币的情况下，总金额凑成4的组合数 = 在放入1的情况下总金额凑成4的组合数 + 在放入1、2的情况下总金额凑成2的组合数，因为2和4之间只差了一个2元，即放入这个硬币的组合数加上不放这个硬币的组合数
+        return dp[-1]
+    #     0   1   2   3   4   5
+    # 1   1   1   1   1   1   1
+    # 2           2   2   3   3
+    # 5                       4
+```
+
+
+
+
 
 # dfs岛屿问题
 
