@@ -524,6 +524,7 @@ class Solution(object):
 https://leetcode.cn/problems/2VG8Kg/
 
 ```python
+# 类似于滑动窗口
 class Solution(object):
     def minSubArrayLen(self, target, nums):
         """
@@ -1104,6 +1105,9 @@ class Solution:
 
 # 回溯
 ## 全排列
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/fig14.png" alt="img" style="zoom:50%;" />
+
 ```python
 class Solution:
     def permute(self, nums):
@@ -1115,20 +1119,61 @@ class Solution:
             # 所有数都填完了
             if first == n:  
                 res.append(nums[:])
-            for i in range(first, n):
+            for i in range(first, n): # 每一层的层序遍历
                 # 动态维护数组
                 nums[first], nums[i] = nums[i], nums[first]
                 # 继续递归填下一个数
-                backtrack(first + 1)
+                backtrack(first + 1) # 每一层的下一层遍历
                 # 撤销操作
-                nums[first], nums[i] = nums[i], nums[first] # 保留 first-1 的状态
+                nums[first], nums[i] = nums[i], nums[first] # 保留 first-1 的状态，让i+1，到first同一层的另外一个子节点
         
         n = len(nums)
         res = []
         backtrack()
         return res
 ```
-## 带有target的组合 如[2,2,2,3]之和等于7的所有组合
+## 组合
+
+https://leetcode.cn/problems/combinations
+
+![image-20220813235359765](C:\Users\56268\Desktop\leetcode\leetcode\code.assets\image-20220813235359765.png)
+
+```py
+class Solution(object):
+    def combine(self, n, k):
+        """
+        :type n: int
+        :type k: int
+        :rtype: List[List[int]]
+        """
+        result = []
+        path = []
+        def backtracking(n, k, startidx):
+            if len(path) == k:
+                result.append(path[:])
+                return
+
+            # 剪枝， 最后k - len(path)个节点直接构造结果，无需递归
+            last_startidx = n - (k - len(path)) + 1
+            result.append(path + [idx for idx in range(last_startidx, n + 1)])
+
+            for x in range(startidx, last_startidx):
+                path.append(x)
+                backtracking(n, k, x + 1)  # 递归
+                path.pop()  # 回溯
+
+        backtracking(n, k, 1)
+        return result
+```
+
+
+
+## 组合总和
+
+https://leetcode.cn/problems/combination-sum/
+
+![img](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/1598091943-hZjibJ-file_1598091940241.png)
+
 ```python
 class Solution(object):
     def combinationSum(self, candidates, target):
@@ -1152,6 +1197,126 @@ class Solution(object):
         n = len(candidates)
         backtracking(target, n, 0, candidates)
         return res
+```
+
+## 分隔回文串
+
+```python
+class Solution(object):
+    def partition(self, s):
+        """
+        :type s: str
+        :rtype: List[List[str]]
+        """
+        path = []
+        res = []
+        def backtracking(first,path,res):
+            if first >= len(s): # 分割线到字符串尾则完成一次分割
+                res.append(path[:])
+                return
+            for i in range(first,len(s)):
+                temp = s[first:i+1] # 截取该层字符串，从这一层的first到i为截取部分
+                if temp == temp[::-1]: # 判断是否为回文串
+                    path.append(temp)
+                    backtracking(i + 1,path,res)
+                    path.pop()
+                else:
+                    continue
+            return res
+        return backtracking(0,path,res)
+```
+
+## 电话号码的字母组合
+
+https://leetcode.cn/problems/letter-combinations-of-a-phone-number/
+
+```python
+class Solution(object):
+    def letterCombinations(self,digits):
+        tb = {'2': "abc", '3': "def", '4': "ghi", '5': "jkl", '6': "mno", '7': "pqrs", '8': "tuv", '9': "wxyz"} # 设置号码映射表
+        res = []
+        path = ''
+        if not digits: return []
+        def backtracking(digits, first,path):
+            if first == len(digits): # 组合数等于输入数字个数则加入
+                res.append(path)
+                return
+            letters = tb[digits[first]] # 获取该节点的数字
+            for letter in letters: # 遍历该节点所有的字母
+                path = path + letter
+                backtracking(digits,first + 1,path) # 下一层是下一个数字的字母，跟上一行的代码进行组合
+                path = path[:-1]
+
+            return res
+
+        return backtracking(digits, 0,path)
+```
+
+
+
+## 组合总和
+
+https://leetcode.cn/problems/combination-sum
+
+```python
+class Solution(object):
+    def combinationSum(self, candidates, target):
+        """
+        :type candidates: List[int]
+        :type target: int
+        :rtype: List[List[int]]
+        """
+        path = []
+        sum_ = 0
+        res = []
+        def backtracking(first,sum_):
+            if sum_ == target:
+                res.append(path[:])
+                return 
+            if sum_ > target:
+                return
+            for i in range(first,len(candidates)): # 二叉树横向遍历
+                sum_ += candidates[i]
+                path.append(candidates[i])
+                backtracking(i,sum_) # 由于可以取自身的值，所以从i开始。二叉树纵向遍历
+                sum_ -= candidates[i]
+                path.pop()
+            return res
+        return backtracking(0,sum_)
+```
+
+## 组合总和Ⅱ
+
+https://leetcode.cn/problems/combination-sum-ii/
+
+```python
+class Solution(object):
+    def combinationSum2(self, candidates, target):
+        """
+        :type candidates: List[int]
+        :type target: int
+        :rtype: List[List[int]]
+        """
+        path = []
+        sum_ = 0
+        res = []
+        candidates = sorted(candidates)
+        def backtracking(first,sum_):
+            if sum_ == target:
+                res.append(path[:])
+                return 
+            if sum_ > target:
+                return
+            for i in range(first,len(candidates)):
+                if i > first and candidates[i] == candidates[i-1]: # 类似于三数之和、四数之和，将同一层中相同的数字给去掉，如target = 8 [2,5,1]和另一个[2]构成的[2,5,1]
+                    continue
+                sum_ += candidates[i]
+                path.append(candidates[i])
+                backtracking(i+1,sum_)
+                sum_ -= candidates[i]
+                path.pop()
+            return res
+        return backtracking(0,sum_)
 ```
 
 # 动态规划
@@ -1257,7 +1422,7 @@ class Solution:
 ## 最大子序和
 ```python
 class Solution:
-# 递归
+# 动态规划
     def maxSubArray(self, nums: List[int]) -> int:ll
         size = len(nums)
         if size == 0:
@@ -1271,7 +1436,7 @@ class Solution:
             else:
                 dp[i] = nums[i]
         return max(dp)
-      
+
 # 贪心
     def maxSubArray(self, nums):
         res = -100000
@@ -1438,5 +1603,4 @@ class Solution(object):
                         edge += 1
         return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
 ```
-
 
