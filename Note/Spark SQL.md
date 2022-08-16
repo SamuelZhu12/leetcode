@@ -169,8 +169,6 @@ val caseClassDS = Seq(Emp("ALLEN", 300.0, 30, 7499, "1981-02-20 00:00:00", "SALE
 caseClassDS.show()
 ```
 
-<br/>
-
 ### 1.3 由RDD创建DataFrame
 
 Spark 支持两种方式把 RDD 转换为 DataFrame，分别是使用反射推断和指定 Schema 转换：

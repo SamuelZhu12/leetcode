@@ -1199,6 +1199,30 @@ class Solution(object):
         return res
 ```
 
+```python
+class Solution(object):
+    def combinationSum(self, candidates, target):
+        path = []
+        sum_ = 0
+        res = []
+        def backtracking(first,sum_):
+            if sum_ == target:
+                res.append(path[:])
+                return 
+            if sum_ > target:
+                return
+            for i in range(first,len(candidates)):
+                sum_ += candidates[i]
+                path.append(candidates[i])
+                backtracking(i,sum_)
+                sum_ -= candidates[i]
+                path.pop()
+            return res
+        return backtracking(0,sum_)
+```
+
+
+
 ## 分隔回文串
 
 ```python
@@ -1318,6 +1342,48 @@ class Solution(object):
             return res
         return backtracking(0,sum_)
 ```
+
+## 子集
+
+https://leetcode.cn/problems/subsets/
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208161126643.png" alt="78.子集" style="zoom:67%;" />
+
+```python
+class Solution(object):
+    def subsets(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[List[int]]
+        """
+        res = []
+        path = []
+        def backtracking(first,res,path):
+            if len(path) <= first: # 不用做break操作，因为first >= nums.size()，本层for循环本来也结束了
+                res.append(path[:])
+            for i in range(first,len(nums)):
+                path.append(nums[i])
+                backtracking(i+1,res,path)
+                path.pop()
+            return res
+        return backtracking(0,res,path)
+
+# dp做法
+class Solution(object):
+    def subsets(self, nums):
+        res = [[]]
+
+        for i in range(len(nums)):
+            for j in res[:]:
+                tmp = j[:] # 每次遍历上一次的res集合，分别插入本轮的nums[i]，再插入res集合中
+                tmp.append(nums[i])
+                res.append(tmp[:])
+        return res
+```
+
+
+
+
 
 # 动态规划
 
