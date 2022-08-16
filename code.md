@@ -1257,7 +1257,7 @@ class Solution:
 ## 最大子序和
 ```python
 class Solution:
-
+# 递归
     def maxSubArray(self, nums: List[int]) -> int:ll
         size = len(nums)
         if size == 0:
@@ -1271,6 +1271,18 @@ class Solution:
             else:
                 dp[i] = nums[i]
         return max(dp)
+      
+# 贪心
+    def maxSubArray(self, nums):
+        res = -100000
+        tmp = 0
+        for i in range(len(nums)):
+            tmp += nums[i]  # 每次都记录子序和的最大值，如果子序和的值小于0了就重新令其等于0
+            if tmp >= res:
+                res = tmp
+            if tmp < 0:
+                tmp = 0
+        return res
 ```
 ## 买入股票的时机
 ```python
@@ -1426,6 +1438,5 @@ class Solution(object):
                         edge += 1
         return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
 ```
-
 
 
