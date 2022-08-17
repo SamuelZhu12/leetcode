@@ -415,6 +415,39 @@ class Solution(object):
         return dummy.next
 ```
 
+## 重排链表
+
+```python
+# Definition for singly-linked list.
+# class ListNode(object):
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution(object):
+    def reorderList(self, head):
+        """
+        :type head: ListNode
+        :rtype: None Do not return anything, modify head in-place instead.
+        """
+        if not head: return None
+        nodeStack = []
+        dummy = ListNode(0,head)
+        cur1 = dummy.next
+        while cur1.next:
+            nodeStack.append((cur1,cur1.next)) # 要将前一个节点也带上
+            cur1 = cur1.next
+        cur2 = dummy.next
+        while cur2.next and cur2.next.next: # 操作涉及到三个节点，所以确保后面两个节点不为空
+            prenode,node = nodeStack.pop()
+            node.next = cur2.next # 尾部 -> cur.next
+            cur2.next = node # cur ->尾部
+            prenode.next = None # 倒数第二个节点 -> None 这样来处理新的尾部节点
+            cur2 = node.next
+        return dummy.next
+```
+
+
+
 
 
 # 双指针
@@ -1250,6 +1283,46 @@ class Solution(object):
         return backtracking(0,path,res)
 ```
 
+## 复原ip地址
+
+https://leetcode.cn/problems/restore-ip-addresses/
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208171144860.png" alt="93.复原IP地址" style="zoom:50%;" />
+
+```python
+# 本质上是对ip字符串插入'.'，也就是分割三次，并对每次的分割结果进行判断
+class Solution(object):
+    def restoreIpAddresses(self, s):
+        """
+        :type s: str
+        :rtype: List[str]
+        """
+        res= []
+        def isIp(ipStr, start, end): 
+            if start > end:
+                return False
+            if ipStr[start] == '0' and start != end: # 0开头，不合法
+                return False
+            if not 0 <= int(ipStr[start:end+1]) <= 255: # 当前截取字符串范围不合法
+                return False
+            return True
+
+        def backtracking(first, pointNum, s):
+            if pointNum == 3: # 当'.'的数量等于3时，返回插入好'.'的字符串
+                if isIp(s,first, len(s)-1):
+                    res.append(s[:])
+                return
+            for i in range(first, len(s)): # 循环控制横向遍历
+                if isIp(s, first, i):  # [first,i]是截取的字符串范围
+                    s = s[:i + 1] + '.' + s[i + 1:] # 对字符串整体进行'.'插入
+                    backtracking(i+2, pointNum + 1, s) # 递归纵向遍历，由于插入了点，所以i+2，且点计数器变量+1
+                    s = s[:i + 1] + s[i+2:] # 复原
+                else: # 如果s[first,i+1]不满足ip要求，则break跳出该层的横向遍历，因为位数超过
+                    break
+            return res
+        return backtracking(0,0,s)
+```
+
 ## 电话号码的字母组合
 
 https://leetcode.cn/problems/letter-combinations-of-a-phone-number/
@@ -1582,8 +1655,8 @@ class Solution:
         # dp[j] 总金额为j时所需要的最少硬币个数，所以dp要做限制，当只有2块的时候，遇到3块则会因为dp[3-2] = 4而 = amount + 1 ，返回-1
         # dp[j] = min(dp[j],dp[j-coins[i]] + 1)
         dp = [a for a in range(amount+1)] # 第一行初始化
-        for i in range(len(coins)):
-            for j in range(coins[i],amount+1):
+        for i in range(len(coins)): # 遍历物品
+            for j in range(coins[i],amount+1): # 遍历背包
                 dp[j] = min(dp[j],dp[j-coins[i]] + 1)
         return dp[-1] if dp[-1] < amount + 1 else -1
 
@@ -1615,6 +1688,26 @@ class Solution:
     # 1   1   1   1   1   1   1
     # 2           2   2   3   3
     # 5                       4
+```
+
+## 最长递增子序列
+
+https://leetcode.cn/problems/longest-increasing-subsequence/
+
+```python
+class Solution(object):
+    def lengthOfLIS(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        n = len(nums)
+        dp = [1] * n
+        for i in range(n):
+            for j in range(i,n):
+                if nums[j] > nums[i]:
+                    dp[j] =max(dp[i] + 1 ,dp[j]) # dp[j]跟自己和上一个小的数i的dp[i]做比较，有可能在其他序列中已经最大，所以加上max
+        return max(dp)
 ```
 
 
