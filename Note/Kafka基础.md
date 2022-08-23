@@ -51,7 +51,7 @@
 
 2） **Consumer**：消息消费者，向kafka broker取消息的客户端。
 
-3） **Consumer Group**：消费者组，由多个comsumer组成。**消费者组内每个消费者负责消费不同分区的数据，一个分区只能由一个消费者进行消费；消费者组之间互不影响**。所有的消费者组都属于某个消费者组，**即消费者组使逻辑上的一个订阅者**。
+3） **Consumer Group**：消费者组，由多个comsumer组成。**消费者组内每个消费者负责消费不同分区的数据，一个分区只能由一个消费者进行消费；消费者组之间互不影响**。所有的消费者组都属于某个消费者组，**即消费者组是逻辑上的一个订阅者**。
 
 4） **Broker**：一台kafka服务器就是一个broker。一个集群由多个broker组成。一个broker可以容纳多个topic。
 
@@ -80,6 +80,7 @@
 
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208101518484.png)
 
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208221759113.png" alt="image-20220130114440095" style="zoom:80%;" />
 
 ### 2.2 Kafka生产者
 
@@ -113,7 +114,7 @@ Kafka选择第二种策略，因为副本多容易造成数据冗余，且kafka�
 
 2）ISR
 
-ISR(in-sync replica set)， 指与leader保持同步的follower集合。当ISR中的follower完成数据的同步之后，leader会给follower发送ack，如果follower长时间没有向leader同步数据，则该follower会被提出，放入osr中。
+ISR(in-sync replica set)， 指与leader保持同步的follower集合。当ISR中的follower完成数据的同步之后，leader会给follower发送ack，如果follower长时间没有向leader同步数据，则该follower会被踢出，放入osr中。
 
  3）ack应答机制
 
@@ -129,14 +130,15 @@ ISR(in-sync replica set)， 指与leader保持同步的follower集合。当ISR�
 
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208101518699.png)
 
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208221729821.png" alt="img" style="zoom:67%;" />
 
 **LEO：指每个副本最大的offset**；
 
-**HW：指消费者可见的最大的offset，ISR队列中最小的LEO。**
+**HW：指消费者可见的最大的offset，ISR队列中最小的LEO。HW之前的消息内容所有Broker是完全同步的，但HW和LEO之间的不一定**
 
 ① follower故障
 
-	follower故障时，会被临时提出ISR，等待该follower恢复后follower会读取本地磁盘记录的上次的HW，并将log文件高于HW的部分截取掉，从HW开始向leader进行同步。等待该follower的LEO大于等于该partition的HW，即follower追上leader后，就可以重新加入ISR。
+	follower故障时，会被临时踢出ISR，等待该follower恢复后follower会读取本地磁盘记录的上次的HW，并将log文件高于HW的部分截取掉，从HW开始向leader进行同步。等待该follower的LEO大于等于该partition的HW，即follower追上leader后，就可以重新加入ISR。
 
 ② leader故障
 
@@ -146,7 +148,7 @@ ISR(in-sync replica set)， 指与leader保持同步的follower集合。当ISR�
 
 #### 2.2.3 Exactly Once语义
 
-	当 ack = -1时，可保证producer到server之间不丢失数据，只可能造成**数据重复**，即**At Least Once**语义。相对的，$$ack = 0$$时，可以保证生产者每条信息只会被发送一次，即**At Most Once**语义，这样可以避免数据重复，但不能避免数据丢失。因此，kafka中加入了**幂等性**，以此保证数据既不丢失也不重复，即**Exactly Once**语义。
+	当 ack = -1时，可保证producer到server之间不丢失数据，只可能造成数据重复，即At Least Once语义。相对的，ack = 0时，可以保证生产者每条信息只会被发送一次，即At Most Once语义，这样可以避免数据重复，但不能避免数据丢失。因此，kafka中加入了幂等性，以此保证数据既不丢失也不重复，即Exactly Once语义。
 $$
 At Least Once + 幂等性 = Exactly Once
 $$
@@ -155,8 +157,6 @@ Kafka的幂等性实现方式是将原本下游要做的去重工作放在了数
 
 
 ### 2.3 Kafka消费者
-
-
 
 #### 2.3.1 消费方式 
 
@@ -172,7 +172,7 @@ Kafka的幂等性实现方式是将原本下游要做的去重工作放在了数
 	
 	Round-Robin策略就是简单的将所有的partition和consumer按照字典序进行排序之后，然后依次将partition分配给各个consumer，如果当前的consumer没有订阅当前的partition，那么就会轮询下一个consumer，直至最终将所有的分区都分配完毕。但是轮询的方式会导致每个consumer所承载的分区数量不一致，从而导致各个consumer压力不均一。
 	
-	②**Range**
+	②Range
 	
 	Range策略是按照topic依次进行分配，先计算各个consumer将会承载的分区数量，然后将已订阅的topic的partition按照指定数量分配给该consumer。如果有两个Consumer：c1,c2，两个topic：topic1, topic2 ，每个topic有三个partition：topic1_0, topic_1, topic1_2,topic2_0, topic2_1, topic2_2 ，则会按照以下步骤进行分配：
 

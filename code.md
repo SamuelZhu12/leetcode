@@ -204,43 +204,37 @@ class Solution(object):
 ```
 ## 第k大的数
 ```python
-class Solution:
-    def findKthLargest(self, nums: List[int], k: int) -> int:
-        
-        def partition(arr: List[int], low: int, high: int) -> int:
-            pivot = arr[low]                                        # 选取最左边为pivot
-      
-            left, right = low, high     # 双指针
-            while left < right:
-                
-                while left<right and arr[right] >= pivot:          # 找到右边第一个<pivot的元素
-                    right -= 1
-                arr[left] = arr[right]                             # 并将其移动到left处
-                
-                while left<right and arr[left] <= pivot:           # 找到左边第一个>pivot的元素
-                    left += 1
-                arr[right] = arr[left]                             # 并将其移动到right处
-            
-            arr[left] = pivot           # pivot放置到中间left=right处
-            return left
-        
-        def randomPartition(arr: List[int], low: int, high: int) -> int:
-            pivot_idx = random.randint(low, high)                   # 随机选择pivot
-            arr[low], arr[pivot_idx] = arr[pivot_idx], arr[low]     # pivot放置到最左边
-            return partition(arr, low, high)                        # 调用partition函数
-    
-        def topKSplit(arr: List[int], low: int, high: int, k: int) -> int:
-            # mid = partition(arr, low, high)                   # 以mid为分割点【非随机选择pivot】
-            mid = randomPartition(arr, low, high)               # 以mid为分割点【随机选择pivot】
-            if mid == k-1:                                      # 第k小元素的下标为k-1
-                return arr[mid]                                 #【找到即返回】
-            elif mid < k-1:
-                return topKSplit(arr, mid+1, high, k)           # 递归对mid右侧元素进行排序
-            else:
-                return topKSplit(arr, low, mid-1, k)            # 递归对mid左侧元素进行排序
-        
+class Solution(object):
+    def findKthLargest(self, nums, k):
+        """
+        :type nums: List[int]
+        :type k: int
+        :rtype: int
+        """
+        # 构建大根堆
+        def maxHeap(nums,index,end):
+          # 第一个左子结点
+            j = 2*index + 1
+            # 如果还没到end，则一直往下调整
+            while j <= end:
+              # 比较左右子结点
+                if j <= end - 1 and nums[j] < nums[j+1]:
+                    j += 1
+             	# 比较最大的子结点和根节点大小，如果大于根节点则交换
+                if j <= end and nums[index] < nums[j]:
+                    nums[index],nums[j] = nums[j],nums[index]
+                    index = j
+                    j = 2*index + 1
+                else: break
         n = len(nums)
-        return topKSplit(nums, 0, n-1, n-k+1)                   # 第k大元素即为第n-k+1小元素
+        # 从最后一个非叶子节点构建
+        for i in range(n//2 + 1,-1,-1):
+            maxHeap(nums,i,n-1)
+       	# 举特例，如果k = 1，则应该是n-1倒序遍历到n-2，k=2应该是n-1倒序遍历到n-3，并且取最后一次取的最大数，即是我们所要的第k大的数
+        for j in range(n-1,n-k-1,-1):
+            nums[0],nums[j] = nums[j],nums[0]
+            maxHeap(nums,0,j-1)
+        return nums[j]
 ```
 
 # 链表
@@ -444,6 +438,40 @@ class Solution(object):
             prenode.next = None # 倒数第二个节点 -> None 这样来处理新的尾部节点
             cur2 = node.next
         return dummy.next
+```
+
+## 复制带随机指针的链表
+
+https://leetcode.cn/problems/copy-list-with-random-pointer/
+
+```python
+"""
+# Definition for a Node.
+class Node:
+    def __init__(self, x, next=None, random=None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+"""
+# 用哈希表存储新的节点。注意是要深拷贝
+class Solution(object):
+    def copyRandomList(self, head):
+        if not head:return None
+        dummy = Node(0,head)
+        cur = dummy.next
+        nodeMap = {}
+        while cur:
+            newNode = Node(cur.val)
+            nodeMap.update({cur:newNode})
+            cur = cur.next
+        cur1 = dummy.next
+        while cur1:
+            if cur1.next:
+                nodeMap[cur1].next = nodeMap[cur1.next]
+            if cur1.random:
+                nodeMap[cur1].random = nodeMap[cur1.random]
+            cur1 = cur1.next
+        return nodeMap[dummy.next]
 ```
 
 
@@ -1057,21 +1085,22 @@ class Solution(object):
 ```
 ## 二叉树最小深度
 ```python
-class Solution:
-    def minDepth(self, root: TreeNode) -> int:
-        if not root:
-            return 0
-
-        if not root.left and not root.right:
-            return 1
-    
-        min_depth = 10 ** 9
-        if root.left:
-            min_depth = min(self.minDepth(root.left), min_depth)
-        if root.right:
-            min_depth = min(self.minDepth(root.right), min_depth)
-    
-        return min_depth + 1
+class Solution(object):
+    def minDepth(self, root):
+        """
+        :type root: TreeNode
+        :rtype: int
+        """
+        def getDepth(node):
+            if not node:
+                return 0
+            # 解决只有一边子树的情况
+            if not node.left and node.right: 
+                return getDepth(node.right) + 1
+            if node.left and not node.right:
+                return getDepth(node.left) + 1
+            return min(getDepth(node.left),getDepth(node.right)) + 1
+        return getDepth(root)
 ```
 ## 迭代法的最小深度
 ```python
@@ -1095,7 +1124,179 @@ class Solution:
     
         return 
 ```
+## 翻转二叉树
+
+```python
+class Solution(object):
+    def invertTree(self, root):
+        """
+        :type root: TreeNode
+        :rtype: TreeNode
+        """
+        def inverse(node):
+            if not node:
+                return
+            
+            tmp = node.right
+            node.right = node.left
+            node.left = tmp
+            inverse(node.left)
+            inverse(node.right)
+        inverse(root)
+        return root
+```
+
+## 对称二叉树
+
+```python
+class Solution(object):
+    def isSymmetric(self, root):
+        """
+        :type root: TreeNode
+        :rtype: bool
+        """
+
+        def compare(left,right):
+          # 先判断为空的情况
+            if not left and right: return False 
+            elif left and not right: return False
+            elif not left and not right: return True
+            elif left.val != right.val: return False
+          # 不符合上述带空值或不相等的情况，就计算该节点的左右子节点是否相等
+            outside = compare(left.left,right.right)
+            inside =  compare(left.right,right.left)
+            return outside and inside
+
+        if not root:
+            return True
+        return compare(root.left,root.right)
+```
+
+## 平衡二叉树
+
+https://leetcode.cn/problems/balanced-binary-tree/
+
+```python
+class Solution(object):
+    def isBalanced(self, root):
+        def traverse(node):
+            if not node:
+                return 0
+            leftHeight = traverse(node.left) # 左子树高度
+            rightHeight = traverse(node.right) # 右子树高度
+            if leftHeight == -1: # 如果左子树不满足平衡二叉树，就返回-1
+                return -1
+            if rightHeight == -1:# 如果右子树不满足平衡二叉树，就返回-1
+                return -1
+            if abs(leftHeight - rightHeight) > 1: # 如果左右子树高度差 >1 本层就返回-1
+                return -1
+            else:
+                return 1 + max(traverse(node.left),traverse(node.right)) # 如果左右子树高度差<1 即满足平衡条件，则
+        flag = traverse(root)
+        return True if flag != -1 else False
+```
+
+## 二叉树的所有路径
+
+https://leetcode.cn/problems/binary-tree-paths/
+
+```python
+class Solution(object):
+    def binaryTreePaths(self, root):
+      
+        res = []
+        def traverse(node,path,res):
+           # path连接每个node的值
+            path += str(node.val)
+            if not node.left and not node.right:
+                res.append(str(path))
+            
+            if node.left:
+              # 由于在path加上了"->"，实际上是隐藏回溯了，因为回溯时撤销的也是"->"
+                traverse(node.left,path + "->",res)
+            if node.right:
+                traverse(node.right,path + "->",res)
+            return res
+
+        return traverse(root,'',res)
+```
+
+## 左叶子之和
+
+```python
+class Solution(object):
+    def sumOfLeftLeaves(self, root):
+        """
+        :type root: TreeNode
+        :rtype: int
+        """
+        def traverse(node):
+            if not node:
+                return 0
+            res = 0
+            # 要从左叶子节点的父节点来进行判断，否则无法判断是否是左叶子还是右叶子
+            if node.left and (not node.left.left) and (not node.left.right): 
+                res = node.left.val
+            return res + traverse(node.left) + traverse(node.right)
+        return traverse(root)
+```
+
+## 路径总和
+
+https://leetcode.cn/problems/path-sum
+
+```python
+class Solution:
+    def hasPathSum(self, root: Optional[TreeNode], targetSum: int) -> bool:
+        if not root:
+            return False
+        def traverse(node,pathSum,targetSum):
+            pathSum += node.val # 对每个节点进行处理，加上每个节点的值，隐形回溯了
+            if (not node.left) and (not node.right) and pathSum == targetSum:
+                return True
+            if node.left: # 该节点的左子树如果有一条路径可以满足target，则返回true
+                if traverse(node.left,pathSum,targetSum):
+                    return True
+                
+            if node.right:
+                if traverse(node.right,pathSum,targetSum):
+                    return True
+                
+            return False
+        return traverse(root,0,targetSum)
+```
+
+## 路径总和2
+
+https://leetcode.cn/problems/path-sum-ii/
+
+```python
+
+class Solution(object):
+    def pathSum(self, root, targetSum):
+        if not root:
+            return []
+        def traverse(node,path):
+            if not node.left and not node.right and sum(path) == targetSum: # 添加的条件
+                res.append(path[:])
+            if node.left: # 节点的回溯处理
+                path.append(node.left.val)
+                traverse(node.left,path)
+                path.pop()
+            if node.right:
+                path.append(node.right.val)
+                traverse(node.right,path)
+                path.pop()
+            return res
+        path = [root.val]
+        res = []
+        return traverse(root,path)
+```
+
+
+
 # 最长回文子串
+
 ```python
 class Solution:
     def longestPalindrome(self, s: str) -> str:
