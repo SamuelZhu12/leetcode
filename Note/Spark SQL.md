@@ -784,14 +784,6 @@ df.write.option(“maxRecordsPerFile”, 5000)
 > 数据库读写更多配置可以参阅官方文档：https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html
 
 
-
-
-
-
-
-
-
-
 ## 参考资料
 
 1. [Spark SQL, DataFrames and Datasets Guide > Getting Started](https://spark.apache.org/docs/latest/sql-getting-started.html)

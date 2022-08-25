@@ -1,5 +1,71 @@
 # 目录
 [TOC]
+# 栈与队列
+
+## 最小栈
+
+https://leetcode.cn/problems/min-stack/solution/zui-xiao-zhan-by-leetcode-solution/
+
+```python
+class MinStack:
+    def __init__(self):
+        self.stack = []
+        self.min_stack = [math.inf]
+
+    def push(self, x: int) -> None:
+        self.stack.append(x)
+        self.min_stack.append(min(x, self.min_stack[-1]))
+
+    def pop(self) -> None:
+        self.stack.pop()
+        self.min_stack.pop()
+
+    def top(self) -> int:
+        return self.stack[-1]
+
+    def getMin(self) -> int:
+        return self.min_stack[-1]
+
+```
+
+## 用栈实现队列
+
+https://leetcode.cn/problems/implement-queue-using-stacks/submissions/
+
+```python
+class MyQueue:
+
+    def __init__(self):
+        self.que = []
+        self.back_que = []
+    def push(self, x: int) -> None:
+        self.que.append(x)
+
+    def pop(self) -> int:
+        if not self.que: return None
+        else:
+            while self.que:
+                self.back_que.append(self.que.pop()) # 将栈的元素倒到另一个栈中，栈顶元素即是之前的栈底元素，也是队列头元素
+            res = self.back_que.pop()
+            while self.back_que:
+                self.que.append(self.back_que.pop())# 将栈中元素倒回去
+            return res
+
+    def peek(self) -> int:
+        if not self.que: return None
+        else:
+            return self.que[0]
+
+    def empty(self) -> bool:
+        if self.que or self.back_que:
+            return False
+        else: return True
+```
+
+
+
+
+
 # LRU
 
 用hashmap(dict类)和链表构造一个双向数据结构，即Python中的OrderedDict类。但需要自己去构造该类
@@ -85,6 +151,98 @@ class LRUCache(object):
             newNode.next = self.tail
             self.tail.prev.next = newNode
             self.tail.prev = newNode
+```
+
+
+
+# 字符串
+
+## 翻转字符串2⃣️
+
+https://leetcode.cn/problems/reverse-string-ii/
+
+```python
+class Solution(object):
+    def reverseStr(self, s, k):
+        """
+        :type s: str
+        :type k: int
+        :rtype: str
+        """
+        i = 0
+        while i < len(s):
+            s = s[:i] + s[i:i+k][::-1] +s[i+k:]
+            i += 2*k
+        return s
+```
+
+
+
+## 替换空格
+
+https://leetcode.cn/problems/ti-huan-kong-ge-lcof/
+
+```python
+class Solution:
+    def replaceSpace(self, s: str) -> str:
+        counter = s.count(' ')
+        
+        res = list(s)
+        # 每碰到一个空格就多拓展两个格子，1 + 2 = 3个位置存’%20‘
+        res.extend([' '] * counter * 2)
+        
+        # 原始字符串的末尾，拓展后的末尾
+        left, right = len(s) - 1, len(res) - 1
+        
+        while left >= 0:
+            if res[left] != ' ':
+                res[right] = res[left]
+                right -= 1
+            else:
+                # [right - 2, right), 左闭右开
+                res[right - 2: right + 1] = '%20'
+                right -= 3
+            left -= 1
+        return ''.join(res)
+```
+
+## 颠倒字符串中的单词
+
+https://leetcode.cn/problems/reverse-words-in-a-string/submissions/
+
+```python
+class Solution(object):
+    def reverseWords(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        res = ''
+        start = 0
+        end = 0
+        # 去除开头和结尾的空格，截取开头第一个遇到的非空格
+        for i in range(len(s)):
+            if s[i] != ' ':
+                s = s[i:]
+                break
+        # 截取倒排第一个遇到的非空格
+        for i in range(len(s)-1,-1,-1):
+            if s[i] != ' ':
+                s = s[:i+1]
+                break
+        # 遇到空格 且空格去重
+        while end < len(s):
+            if s[end] == ' ' and s[end] != s[end-1]:
+                res = ' ' + s[start:end] + res
+                start = end + 1
+            # 存在空格的时候，start指针进行移动
+            if s[end] == ' ' and s[end] == s[end-1]:
+                start += 1
+            if end == len(s) - 1:
+            # 最后一个单词
+                res = s[start:end+1] + res
+            end += 1
+        return res
 ```
 
 

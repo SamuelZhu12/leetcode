@@ -1,5 +1,7 @@
 # JVM（JAVA虚拟机）
 
+[TOC]
+
 ## 一、数据区域
 
 <img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208161416276.png" alt="img" style="zoom:67%;" />

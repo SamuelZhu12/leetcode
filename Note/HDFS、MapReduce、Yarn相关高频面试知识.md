@@ -1,14 +1,60 @@
 # HDFS、MapReduce、Yarn相关高频面试知识
-## 1. HDFS读写流程
+## 1. HDFS
 
-### 1.1 读流程
+### 1.1 基本概念
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208231442251.png" alt="img" style="zoom:67%;" />
+
+HDFS是Hadoop下分布式文件存储系统，其具有高吞吐、高容错的特性，可以部署在低成本的硬件上。
+
+#### 架构
+
+HDFS遵从主、从架构，由单个NameNode和多个DataNode组成。
+
+- NameNode：负责有关`文件系统命名空间`的操作，例如打开、关闭、重命名文件和目录等。同时还负责集群元数据的存储，记录着文件中各个数据块的位置信息。
+- DataNode：负责提供来自文件系统客户端的读写请求，执行块的创建，删除等操作。
+- SecondaryNameNode：NameNode的热备份。
+
+#### 数据复制
+
+HDFS提供了数据复制机制，将每一个文件存储为一系列Block，每个块由多个副本（默认为3）来保证容错，块的默认大小为128M。
+
+#### 机架感知副本放置策略
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208231449495.png" alt="img" style="zoom:67%;" />
+
+在写入程序位于DataNode上时，就优先将写入文件的一个副本放置在该DataNode上，否则放在随机DataNode。之后在另一个远程机架上的任意一个节点上放置另一个副本，并在该机架上的另一个节点上放置最后一个副本。此策略可以减少机架间的写入流量，从而提高写入性能。
+
+为了最大限度地减少带宽消耗和读取延迟，HDFS 在执行读取请求时，优先读取距离读取器最近的副本。如果在与读取器节点相同的机架上存在副本，则优先选择该副本。如果 HDFS 群集跨越多个数据中心，则优先选择本地数据中心上的副本。
+
+#### HDFS架构的稳定性
+
+1. 心跳机制和重新复制
+
+每个 DataNode 定期向 NameNode 发送心跳消息，如果超过指定时间没有收到心跳消息，则将 DataNode 标记为死亡。NameNode 不会将任何新的 IO 请求转发给标记为死亡的 DataNode，也不会再使用这些 DataNode 上的数据。 由于数据不再可用，可能会导致某些块的复制因子小于其指定值，NameNode 会跟踪这些块，并在必要的时候进行重新复制。
+
+2. 数据的完整性
+
+由于存储设备故障等原因，存储在 DataNode 上的数据块也会发生损坏。为了避免读取到已经损坏的数据而导致错误，HDFS 提供了数据完整性校验机制来保证数据的完整性，具体操作如下：
+
+当客户端创建 HDFS 文件时，它会计算文件的每个块的 `校验和`，并将 `校验和` 存储在同一 HDFS 命名空间下的单独的隐藏文件中。当客户端检索文件内容时，它会验证从每个 DataNode 接收的数据是否与存储在关联校验和文件中的 `校验和` 匹配。如果匹配失败，则证明数据已经损坏，此时客户端会选择从其他 DataNode 获取该块的其他可用副本。
+
+3. 元数据的磁盘故障
+
+`FsImage` 和 `EditLog` 是 HDFS 的核心数据，这些数据的意外丢失可能会导致整个 HDFS 服务不可用。为了避免这个问题，可以配置 NameNode 使其支持 `FsImage` 和 `EditLog` 多副本同步，这样 `FsImage` 或 `EditLog` 的任何改变都会引起每个副本 `FsImage` 和 `EditLog` 的同步更新。
+
+4. 支持快照
+
+快照支持在特定时刻存储数据副本，在数据意外损坏时，可以通过回滚操作恢复到健康的数据状态。
+
+### 1.2 读流程
 ![HDFS读流程](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202207291733035.png)
 
 1. 客户端(HDFS Client)通过Distributed FileSystem分布式文件系统向NameNode请求**下载**文件，由NameNode返回目标文件的元数据；
 2. 由FSDataInputStream请求读数据DataNode1上的block1，由DataNode1传输回数据；
 3. 再向block2发送读数据请求...再向block3发送请求...
 
-### 1.2 写流程
+### 1.3 写流程
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202207291733048.png)
 
 1. 客户端(HDFS Client)通过Distributed FileSystem分布式文件系统向NameNode请求**上传**文件，由NameNode响应上传文件；
@@ -19,6 +65,37 @@
 6. FsDataOutputStream向前传输数据Packet。
 
 
+
+### 1.4 Secondary NameNode
+
+NameNode主要是用来保存HDFS的元数据信息，比如命名空间信息，块信息等。当它运行的时候，这些信息是存在内存中的。但是这些信息也可以持久化到磁盘上。
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208231514871.png" alt="img"  />
+
+上面的这张图片展示了NameNode怎么把元数据保存到磁盘上的。这里有两个不同的文件：
+
+```
+1. fsimage - 它是在NameNode启动时对整个文件系统的快照
+2. edit logs - 它是在NameNode启动后，对文件系统的改动序列
+```
+
+只有在NameNode重启时，edit logs才会合并到fsimage文件中，从而得到一个文件系统的最新快照。但是在产品集群中NameNode是很少重启的，这也意味着当NameNode运行了很长时间后，edit logs文件会变得很大。在这种情况下就会出现下面一些问题：
+
+1. edit logs文件会变的很大，怎么去管理这个文件是一个挑战。
+2. NameNode的重启会花费很长时间，因为edit logs很多改动要合并到fsimage文件上。
+3. 如果NameNode挂掉了，那我们就丢失了很多改动，因为此时的fsimage文件非常旧。[笔者注: 笔者认为在这个情况下丢失的改动不会很多, 因为丢失的改动应该是还在内存中但是没有写到edit logs的这部分。
+
+因此为了克服这个问题，我们需要一个易于管理的机制来帮助我们减小edit logs文件的大小和得到一个最新的fsimage文件，这样也会减小在NameNode上的压力。这跟Windows的恢复点是非常像的，Windows的恢复点机制允许我们对OS进行快照，这样当系统发生问题时，我们能够回滚到最新的一次恢复点上。
+
+**SecondaryNameNode**就是来帮助解决上述问题的，它的职责是合并NameNode的edit logs到fsimage文件中。
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202208231519489.png" alt="img"  />
+
+```
+1. 首先，它定时到NameNode去获取edit logs，并更新到fsimage上。[笔者注：Secondary NameNode自己的fsimage]
+2. 一旦它有了新的fsimage文件，它将其拷贝回NameNode中。
+3. NameNode在下次重启时会使用这个新的fsimage文件，从而减少重启的时间。
+```
 
 ## 2. HDFS小文件处理
 **问题：**一个Block占用**NameNode** 150字节，那么当小文件过多的时候则会占用大量内存空间
@@ -100,8 +177,8 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 
 1. 增加NodeManager内存，根据服务器实际配置灵活调整；
 2. 增加单任务内存，根据服务器实际配置灵活调整；
-3. 控制MapTask内存上限，调整mapreduce.map.memory.mb参数：如果数据量过大（>128M)，则考虑增加内存上限；
-4. 控制ReduceTask内存上限，调整mapreduce.reduce.memory.mb参数：如果数据量过大(>128M) ，则考虑增加内存上限；
+3. 控制MapTask内存上限，调整**mapreduce.map.memory.mb**参数：如果数据量过大（>128M)，则考虑增加内存上限；
+4. 控制ReduceTask内存上限，调整**mapreduce.reduce.memory.mb**参数：如果数据量过大(>128M) ，则考虑增加内存上限；
 5. 控制MapTask和ReduceTask的堆内存大小。mapreduce.map.java.opts、mapreduce.reduce.java.opts；
 6. 增加MapTask和ReduceTask的CPU核数；
 7. 增加Container的CPU核数和内存大小；
@@ -163,7 +240,7 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 
 
 1. Mr程序提交到客户端所在节点后会创建一个YarnRunner（本地模式时是LocalRunner）；
-2. 由Yarn向ResourceManager申请一个Application ；
+2. 由Yarn向ResourceManager申请一个Application；
 3. RM返回Application资源提交路径和application_id；
 4. Yarn向集群提交job运行所需资源：**切片文件job.split，参数文件job.xml，代码xx.jar**;
 5. 客户端向RM申请mapreduceApplicationMaster(AM)，RM将请求初始化成一个Task，并放入任务队列(Scheduler)中；
@@ -244,7 +321,5 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 5. 自定义Shuffle分区算法
 
 	根据数据应用属性将数据重新进行分区划分。
-
-
 
 **参考：尚硅谷Hadoop教程**
