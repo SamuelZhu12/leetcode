@@ -153,6 +153,128 @@ class LRUCache(object):
             self.tail.prev = newNode
 ```
 
+# 数组
+
+## 轮转数组
+
+https://leetcode.cn/problems/rotate-array
+
+```python
+class Solution(object):
+    def rotate(self, nums, k):
+        def rotateNums(nums,i,j):
+            while i <= j:
+                nums[i],nums[j] = nums[j],nums[i]
+                i += 1
+                j -= 1
+        k = k % len(nums)
+        rotateNums(nums,0,len(nums)-1)
+        rotateNums(nums,0,k-1)
+        rotateNums(nums,k,len(nums)-1)
+        return nums
+```
+
+## 寻找旋转排序数组中的最小值
+
+https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/
+
+```python
+class Solution(object):
+    def findMin(self, nums):
+        l = 0
+        r = len(nums) - 1
+        while l < r:
+            mid = (l + r)//2
+            # mid数字大于右端数字，说明最小值在右侧
+            if nums[r] < nums[mid]:
+                l = mid + 1
+            # mid数字小于等于右侧数字，说明最小值在左侧
+            else:
+                r = mid
+        return nums[l]
+```
+
+
+
+## 搜索旋转排序数组2⃣️
+
+https://leetcode.cn/problems/search-in-rotated-sorted-array-ii/
+
+```python
+class Solution(object):
+    def search(self, nums, target):
+        if not nums:
+            return False
+        l = 0
+        r = len(nums) - 1
+        while l <= r:
+            # 消除重复元素的影响
+            while l < r and nums[l] == nums[l+1]:
+                l += 1
+            while l < r and nums[r] == nums[r-1]:
+                r -= 1
+            # 取中点
+            mid = (l+r)//2
+            
+            # 判断左右有序情况
+            # 如果左侧有序
+            if nums[mid] == target:
+                return True
+            if nums[0] <= nums[mid]:
+                if nums[0] <= target < nums[mid]:
+                    r = mid - 1
+                else:
+                    l = mid + 1
+            # 如果右侧有序
+            else:
+                if nums[mid] < target <= nums[len(nums)-1]:
+                    l = mid + 1
+                else:
+                    r = mid - 1
+        return False
+                    
+```
+
+## 搜索旋转数组（面试版）
+
+https://leetcode.cn/problems/search-rotate-array-lcci/
+
+```python
+class Solution(object):
+    def search(self, arr, target):
+        if arr[0] == target:
+            return 0
+        l = 0
+        r = len(arr) - 1
+        # 左侧的最小值 > 右侧的最大值
+        while l <= r:
+            mid = (l + r) // 2
+            # 中间值等于目标值，将右边界移到中间，因为左边可能还有相等的值
+            if arr[mid] == target:
+                while mid > 0 and arr[mid] == arr[mid-1]:
+                    mid -= 1
+                return mid
+            # 判断mid在左侧还是右侧有序数组
+            # mid大于左侧最小值，说明在左侧
+            if arr[r] < arr[mid]:
+                if arr[l] <= target < arr[mid]:
+                    r = mid - 1
+                else:
+                    l = mid + 1
+            # mid 小于左侧最小值，说明在右侧
+            elif arr[r] > arr[mid]:
+                if arr[mid] <target <= arr[r]:
+                    l = mid + 1
+                else:
+                    r = mid - 1
+            # 中间数字等于左边数字时，左边界右移
+            else:
+                r -= 1
+        return -1
+```
+
+
+
 
 
 # 字符串
@@ -175,8 +297,6 @@ class Solution(object):
             i += 2*k
         return s
 ```
-
-
 
 ## 替换空格
 
