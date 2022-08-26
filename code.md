@@ -194,7 +194,35 @@ class Solution(object):
         return nums[l]
 ```
 
+## 搜索排序数组
 
+```python
+class Solution(object):
+    def search(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: int
+        """
+        l = 0
+        r = len(nums) - 1
+        while l <= r:
+            mid = (l+r)//2
+            if nums[mid] == target:
+                return mid
+            # mid在左侧
+            if nums[mid] >= nums[l]:
+                if nums[l] <= target < nums[mid]:
+                    r = mid - 1
+                else:
+                    l = mid + 1
+            else:
+                if nums[mid] < target <= nums[r]:
+                    l = mid + 1
+                else:
+                    r = mid - 1
+        return -1
+```
 
 ## 搜索旋转排序数组2⃣️
 
@@ -535,6 +563,7 @@ class Solution(object):
 ```
 
 ## 反转链表
+
 ```python
 class Solution(object):
     def reverseList(self, head):
@@ -551,6 +580,9 @@ class Solution(object):
         return pre
 ```
 ## 反转链表2
+
+
+
 ```python
 class Solution:
     # 头插法
@@ -571,7 +603,44 @@ class Solution:
             # 第二次循环把3插到2前面
         return dummy_node.next
 ```
+## K个一组反转链表
+
+https://leetcode.cn/problems/reverse-nodes-in-k-group/submissions/
+
+```python
+# Definition for singly-linked list.
+# class ListNode(object):
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution(object):
+    def reverseKGroup(self, head, k):
+        dummy = ListNode(0,head)
+        pre = dummy
+        tail = dummy
+
+        while True:
+            count = k
+            while tail and count > 0:
+                tail = tail.next
+                count -= 1
+            if not tail:
+                break
+            head = pre.next
+            while pre.next != tail:
+                cur = pre.next
+                pre.next = cur.next
+                cur.next = tail.next
+                tail.next = cur
+            pre = head
+            tail = head
+        return dummy.next
+```
+
+
+
 ## 删除链表指定值的节点
+
 ```python
     def removeElements(self, head, val):
         """
