@@ -63,9 +63,35 @@ class MyQueue:
         else: return True
 ```
 
+## 滑动窗口的最大元素
 
+https://leetcode.cn/problems/sliding-window-maximum/
 
-
+```PYTHON
+class Solution(object):
+    def maxSlidingWindow(self, nums, k):
+        queue = deque()
+        queue.append(nums[0])
+        res = []
+        # 窗口初始化
+        for i in range(1,k):
+        # 维护一个有序队列，保证队列出口的元素为最大值和第二大值
+        # 进队列元素和队尾元素进行比较,比nums[i]小的队尾元素均从队尾弹出
+            while queue and nums[i] > queue[-1]:
+                queue.pop()
+            queue.append(nums[i])
+        res.append(queue[0])
+        for i in range(k,len(nums)):
+            # 如果nums[i-k]的元素(滑动窗口的首元素，即将要退出滑动窗口))是队首元素,则将队首元素（最大值）弹出
+            if nums[i-k] == queue[0]:
+                queue.popleft()
+            # 判断新元素在有序队列中的位置
+            while queue and nums[i] > queue[-1]:
+                queue.pop()
+            queue.append(nums[i])
+            res.append(queue[0])
+        return res
+```
 
 # LRU
 
@@ -83,9 +109,6 @@ class ListNode:
 class LRUCache(object):
 
     def __init__(self, capacity):
-        """
-        :type capacity: int
-        """
         # 哈希表+链表 最近访问的节点在尾节点，最久未访问的节点在头节点
         self.capacity = capacity
         self.hashmap = {}
@@ -112,10 +135,6 @@ class LRUCache(object):
 
 
     def get(self, key):
-        """
-        :type key: int
-        :rtype: int
-        """
         # 如果key存在于hashmap
         if key in self.hashmap:
             self.move_node_to_tail(key)
@@ -126,11 +145,6 @@ class LRUCache(object):
         else:
             return res.value
     def put(self, key, value):
-        """
-        :type key: int
-        :type value: int
-        :rtype: None
-        """
         # 如果key在hashmap中,改变value，并放到链表尾部（最近访问）
         if key in self.hashmap:
             self.hashmap[key].value = value
@@ -402,7 +416,7 @@ class Solution(object):
 ```python
 ## 时间复杂度：基于随机选取主元的快速排序时间复杂度为期望 O(nlogn)，其中 n为数组的长度。详细证明过程可以见《算法导论》第七章，这里不再大篇幅赘述。
 
-## 空间复杂度：O(h)O(h)，其中 hh 为快速排序递归调用的层数。我们需要额外的 O(h)O(h) 的递归调用的栈空间，由于划分的结果不同导致了快速排序递归调用的层数也会不同，最坏情况下需 O(n)O(n) 的空间，最优情况下每次都平衡，此时整个递归树高度为 \log nlogn，空间复杂度为 O(\log n)O(logn)。
+## 空间复杂度：O(h)O(h)，其中 hh 为快速排序递归调用的层数。我们需要额外的 O(h)O(h) 的递归调用的栈空间，由于划分的结果不同导致了快速排序递归调用的层数也会不同，最坏情况下需 O(n)O(n) 的空间，最优情况下每次都平衡，此时整个递归树高度为nlogn，空间复杂度为O(logn)。
 
 class Solution(object):
     def sortArray(self, nums):
@@ -582,57 +596,59 @@ class Solution(object):
 ```
 ## 反转链表2
 
+https://leetcode.cn/problems/reverse-linked-list-ii/
 
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/image-20220827003711299.png" alt="image-20220827003711299" style="zoom:67%;" />
 
 ```python
-class Solution:
-    # 头插法
-    def reverseBetween(self, head: ListNode, left: int, right: int) -> ListNode:
-        # 设置 dummyNode 是这一类问题的一般做法
-        dummy_node = ListNode(-1)
-        dummy_node.next = head
-        pre = dummy_node # left之前的节点，计作0节点
-        for _ in range(left - 1):
+class Solution(object):
+    def reverseBetween(self, head, left, right):
+        dummy = ListNode(0,head)
+        pre = dummy
+        tail = dummy
+        # 移动到left之前的节点作为pre
+        for _ in range(left-1):
             pre = pre.next
-
-        cur = pre.next # 左端节点
-        for _ in range(right - left):
-            next = cur.next # 第一次循环，next = 2节点
-            cur.next = next.next # 第一次循环，1节点的next为3节点
-            next.next = pre.next # 第一次循环，2节点的next为1节点
-            pre.next = next # 第一次循环，0节点的next为2节点： 0->2->1-> 3 ->4 -> 把2插到1前面
-            # 第二次循环把3插到2前面
-        return dummy_node.next
+        # 移动到right节点作为tail
+        for _ in range(right):
+            tail = tail.next
+        # 使用尾插法
+        while pre.next != tail:
+            cur = pre.next
+            pre.next = cur.next
+            cur.next = tail.next
+            tail.next = cur
+        return dummy.next
 ```
 ## K个一组反转链表
 
 https://leetcode.cn/problems/reverse-nodes-in-k-group/submissions/
 
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/image-20220827001103557.png" style="zoom: 50%;" />
+
 ```python
-# Definition for singly-linked list.
-# class ListNode(object):
-#     def __init__(self, val=0, next=None):
-#         self.val = val
-#         self.next = next
 class Solution(object):
     def reverseKGroup(self, head, k):
         dummy = ListNode(0,head)
         pre = dummy
         tail = dummy
-
+        
         while True:
             count = k
+            # 把tail移动到尾部，这里count不等于0
             while tail and count > 0:
                 tail = tail.next
                 count -= 1
+            # 如果tail为空，则不进行反转，说明后面的长度不够k
             if not tail:
                 break
-            head = pre.next
+            head = pre.next # head指向未反转时候的第一个节点
             while pre.next != tail:
-                cur = pre.next
+                cur = pre.next # cur每次为pre的下一个节点，也就是要插入tail后面的节点
                 pre.next = cur.next
                 cur.next = tail.next
                 tail.next = cur
+            #组内反转完毕，head和tail移动到下一个pre
             pre = head
             tail = head
         return dummy.next
