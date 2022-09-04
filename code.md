@@ -1997,7 +1997,7 @@ class Solution(object):
         res = []
         path = []
         def backtracking(first,res,path):
-            if len(path) <= first: # 不用做break操作，因为first >= nums.size()，本层for循环本来也结束了
+            if len(path) <= first:   
                 res.append(path[:])
             for i in range(first,len(nums)):
                 path.append(nums[i])
@@ -2273,6 +2273,27 @@ class Solution(object):
                 if nums[j] > nums[i]:
                     dp[j] =max(dp[i] + 1 ,dp[j]) # dp[j]跟自己和上一个小的数i的dp[i]做比较，有可能在其他序列中已经最大，所以加上max
         return max(dp)
+```
+
+## 最长公共子序列
+
+https://leetcode.cn/problems/longest-common-subsequence/
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/20210210150215918.jpg" style="zoom:67%;" />
+
+```PYTHON
+class Solution(object):
+    def longestCommonSubsequence(self, text1, text2):
+        m = len(text2)
+        n = len(text1)
+        dp = [[0 for i in range(n+1)] for j in range(m+1)]
+        for i in range(1,m+1):
+            for j in range(1,n+1):
+                if text2[i-1] == text1[j-1]:
+                    dp[i][j] = dp[i-1][j-1] + 1
+                else:
+                    dp[i][j] = max(dp[i-1][j],dp[i][j-1])
+        return dp[m][n]
 ```
 
 
