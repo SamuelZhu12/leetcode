@@ -1,4 +1,4 @@
-# HDFS、MapReduce、Yarn相关高频面试知识
+# HDFS、MapReduce、Yarn面试知识
 ## 1. HDFS
 
 ### 1.1 基本概念
@@ -25,7 +25,9 @@ HDFS提供了数据复制机制，将每一个文件存储为一系列Block，�
 
 在写入程序位于DataNode上时，就优先将写入文件的一个副本放置在该DataNode上，否则放在随机DataNode。之后在另一个远程机架上的任意一个节点上放置另一个副本，并在该机架上的另一个节点上放置最后一个副本。此策略可以减少机架间的写入流量，从而提高写入性能。
 
-为了最大限度地减少带宽消耗和读取延迟，HDFS 在执行读取请求时，优先读取距离读取器最近的副本。如果在与读取器节点相同的机架上存在副本，则优先选择该副本。如果 HDFS 群集跨越多个数据中心，则优先选择本地数据中心上的副本。
+为了最大限度地减少带宽消耗和读取延迟，HDFS 在执行读取请求时，优先读取距离**读取器最近**和**访问量最小**的副本。如果在与读取器节点相同的机架上存在副本，则优先选择该副本。如果 HDFS 群集跨越多个数据中心，则优先选择本地数据中心上的副本。 
+
+由于Block在不同的Rack上都有备份，所以不再是单数据访问，所以速度和效率是非常快的。另外HDFS可以并行从服务器集群中读写，增加了文件读写的访问带宽。
 
 #### HDFS架构的稳定性
 
@@ -97,7 +99,34 @@ NameNode主要是用来保存HDFS的元数据信息，比如命名空间信息�
 3. NameNode在下次重启时会使用这个新的fsimage文件，从而减少重启的时间。
 ```
 
+### 1.5 HDFS的优点
+
+- 高吞吐量访问：由于Block在不同的Rack上都有备份，所以不再是单数据访问，所以速度和效率是非常快的。另外HDFS可以并行从服务器集群中读写，增加了文件读写的访问带宽。
+- 高容错性：系统故障是不可避免的，如何做到故障之后的数据恢复和容错处理是至关重要的。HDFS通过多方面保证数据的可靠性，多份复制并且分布到物理位置的不同服务器上，数据校验功能、后台的连续自检数据一致性功能都为高容错提供了可能。
+- 线性扩展：因为HDFS的Block信息存放到NameNode上，文件的Block分布到DataNode上，当扩充的时候仅仅添加DataNode数量，系统可以在不停止服务的情况下做扩充，不需要人工干预。
+
+### 1.6 HDFS故障检测机制
+
+1）节点失败检测机制
+
+- 如果NameNode故障，整个集群会宕机，因为NameNode是唯一单点。
+- DataNode以固定周期向NameNode发送心跳信息，通过该方式证明其健康。超过10min没有收到DN的心跳信息，则NN会认为该DN挂掉。
+
+2）通信故障检测机制
+
+- 只要DN发送了数据，接收方就会返回确认码，如果经过几次重试依旧没有收到确认码，则可认为主机挂掉。
+
+3）数据错误检测机制
+
+- 在传输数据的时候，同时会发送总和校验码，当硬盘存储数据的时候也会存储总校验码。
+- DN发送数据块报告之前，会检查总和校验码，如果数据存在错误则不发送该数据块。NN也能根据发送数据的校验码判断DN的健康状态。
+
+　　HDFS存储理念是以最少的钱买最烂的机器并实现最安全、难度高的分布式文件系统(高容错性低成本)。从上可以看出，HDFS认为机器故障是种常态，所以在设计时充分考虑到单个机器故障，单个磁盘故障，单个文件丢失等情况。
+
+
+
 ## 2. HDFS小文件处理
+
 **问题：**一个Block占用**NameNode** 150字节，那么当小文件过多的时候则会占用大量内存空间
 
 **解决方法** 1. 采用har归档方式，将小文件归类； 2. 采用CombineTextInputFormat，将小文件逻辑划分到一个切片中，使多个小文件被一个MapTask处理； 3. 在有小文件的情况下开启JVM重用，使JVM实例在同一个job中被重新使用N次，N的值可以在Hadoop的mapred-site.xml中进行配置。
@@ -107,9 +136,8 @@ NameNode主要是用来保存HDFS的元数据信息，比如命名空间信息�
 1. 虚拟存储过程：将输入目录下所有文件跟已设置的setMaxInputSplitSize值进行比较，如果不大于该值则逻辑上划分一个块，如果**大于该值且大于两倍**，则以最大值切割一块，当剩余数据**大于该值且小于该值2倍**，则将剩余数据平均划分；
 2. 切片过程：判断虚拟存储的文件大小是否大于setMaxInputSplitSize，若**大于等于**则单独形成切片；如果**不大于**则跟下一个虚拟存储文件进行合并形成切片。
 
-
-
 ## 3. MapRuduce工作流程
+
 ![在这里插入图片描述](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/typora/202207291733781.png)
 
 ### 3.1 Map阶段
@@ -224,7 +252,7 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 
 - Container
 
-​		`Container` 是 YARN 中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等。当 AM 向 RM 申请资源时，RM 为 AM 返回的资		源是用 `Container` 表示的。YARN 会为每个任务分配一个 `Container`，该任务只能使用该 `Container` 中描述的资源。`ApplicationMaster` 可在`Container` 		内运行任何类型的任务。例如，`MapReduce ApplicationMaster` 请求一个容器来启动 map 或 reduce 任务，而 `Giraph ApplicationMaster` 请求一个容器       		来运行 Giraph 任务。
+​		`Container` 是 YARN 中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等。当 AM 向 RM 申请资源时，RM 为 AM 返回的资源是用 `Container` 表示的。YARN 会为每个任务分配一个 `Container`，该任务只能使用该 `Container` 中描述的资源。`ApplicationMaster` 可在`Container`内运行任何类型的任务。例如，`MapReduce ApplicationMaster` 请求一个容器来启动 map 或 reduce 任务，而 `Giraph ApplicationMaster` 请求一个容器来运行 Giraph 任务。
 
 ### 4.2 Yarn工作机制
 
@@ -252,7 +280,17 @@ shuffle是按照key将数据发送到不同的reduce,产生磁盘与网络IO,如
 11. NM向RM申请Container运行ReduceTask，对应进程也是Yarn Child；
 12. mpAppMaster向RM申请注销。
 
+### 4.3 YARN优势
+1、YARN的设计减小了JobTracker的资源消耗，并且让监测每一个Job子任务（tasks)状态的程序分布式化了，更安全、更优美。
 
+2、在新的Yarn中，ApplicationMaster是一个可变更的部分，用户可以对不同的编程模型写自己的AppMst，让更多类型的编程模型能够跑在Hadoop集群中。
+
+3、对于资源的表示以内存为单位，比之前以剩余slot数目更加合理。
+
+4、MRv1中JobTracker一个很大的负担就是监控job下的tasks的运行状况，现在这个部分就扔给ApplicationMaster做了，
+而ResourceManager中有一个模块叫做ApplicationManager，它是监测ApplicationMaster的运行状况，如果出问题，会在其他机器上重启。
+
+5、Container用来作为YARN的一个资源隔离组件，可以用来对资源进行调度和控制。
 
 ## 5. Yarn调度器
 

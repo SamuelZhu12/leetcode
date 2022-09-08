@@ -384,8 +384,8 @@ switch 不支持 long、float、double，是因为 switch 的设计初衷是对�
 ```java
 final int x = 1;
 // x = 2;  // cannot assign value to final variable 'x'
-final A y = new A();
-y.a = 1;
+final A y = new A(); // new A()是新创建的一个对象，而y是引用该对象的地址
+y.a = 1; // 对象里面的成员变量可以修改，但y是无法引用其他对象的
 ```
 
 **2. 方法**

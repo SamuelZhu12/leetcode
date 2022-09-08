@@ -1,8 +1,10 @@
 # Java并发
 
+![Java并发1](https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/Java%E5%B9%B6%E5%8F%911.png)
+
 [TOC]
 
-# 一、使用线程
+## 一、使用线程
 
 有三种使用线程的方法：
 
@@ -10,7 +12,7 @@
 - 实现 Callable 接口；
 - 继承 Thread 类。
 
-实现 Runnable 和 Callable 接口的类只能当做**一个可以在线程中运行的任务**，不是真正意义上的线程，因此最后还需要通过 Thread 来调用。可以理解为任务是通过线程驱动从而执行的。
+实现 Runnable 和 Callable 接口的类只能当做**一个可以在线程中运行的任务**，不是真正意义上的线程，因此最后还需要通过 Thread 来调用。可以理解为任务是通过线程驱动从而执行的。当使用Thread类启动一个线程的时候，需要对run()方法进行重写，但是可能该类已经继承了某个父类，因此无法再继承Thread类对run()方法进行重写，所以可以通过实现Runnable接口，重写run()方法来对该线程进行操作。
 
 ### 实现 Runnable 接口
 
@@ -19,7 +21,7 @@
 ```java
 public class MyRunnable implements Runnable {
     @Override
-    public void run() {
+    public void run() { //run()方法无返回值
         // ...
     }
 }
@@ -41,7 +43,7 @@ public static void main(String[] args) {
 
 ```java
 public class MyCallable implements Callable<Integer> {
-    public Integer call() {
+    public Integer call() { //call()方法有返回值
         return 123;
     }
 }
@@ -150,7 +152,7 @@ public void run() {
 
 ### InterruptedException
 
-通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。但是不能中断 I/O 阻塞和 synchronized 锁阻塞。
+通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于**阻塞、限期等待或者无限期等待状态**，那么就会抛出 InterruptedException，从而提前结束该线程。但是不能中断 I/O 阻塞和 synchronized 锁阻塞。
 
 对于以下代码，在 main() 中启动一个线程之后再中断它，由于线程中调用了 Thread.sleep() 方法，因此会抛出一个 InterruptedException，从而提前结束线程，不执行之后的语句。
 
@@ -425,7 +427,11 @@ synchronized 中的锁是非公平的，ReentrantLock 默认情况下也是非�
 
 ### join()
 
-在线程中调用另一个线程的 join() 方法，会将当前线程挂起，而不是忙等待，直到目标线程结束。
+https://juejin.cn/post/6844903977113354254
+
+<img src="https://typora-1308702321.cos.ap-guangzhou.myqcloud.com/d5386b2aaabd43cab4b0f042e0270118~tplv-k3u1fbpfcp-zoom-1.image" alt="img" style="zoom:50%;" />
+
+在线程中调用另一个线程的 join() 方法，会将当前线程挂起，而不是忙等待，直到目标线程结束。相当于在主线程中调用了wait()，待join的线程执行完消亡后，调用notifyAll()来唤醒主线程。
 
 对于以下代码，虽然 b 线程先启动，但是因为在 b 线程中调用了 a 线程的 join() 方法，b 线程会等待 a 线程结束才继续执行，因此最后能够保证 a 线程的输出先于 b 线程的输出。
 
@@ -1046,7 +1052,7 @@ public static void main(String[] args) throws InterruptedException {
 
 主要有三种实现可见性的方式：
 
-- volatile
+- volatile：使用 volatile 修饰的变量确保了线程不会将该变量拷贝到自己的工作线程中，所有线程对该变量的操作都是在主存中进行的，所以 volatile 修饰的变量对所有线程可见。
 - synchronized，对一个变量执行 unlock 操作之前，必须把变量值同步回主内存。
 - final，被 final 关键字修饰的字段在构造器中一旦初始化完成，并且没有发生 this 逃逸（其它线程通过 this 引用访问到初始化了一半的对象），那么其它线程就能看见 final 字段的值。
 
@@ -1261,6 +1267,8 @@ public static void main(String[] args) {
 如果一段代码中所需要的数据必须与其他代码共享，那就看看这些共享数据的代码是否能保证在同一个线程中执行。如果能保证，我们就可以把共享数据的可见范围限制在同一个线程之内，这样，无须同步也能保证线程之间不出现数据争用的问题。
 
 符合这种特点的应用并不少见，大部分使用消费队列的架构模式（如“生产者-消费者”模式）都会将产品的消费过程尽量在一个线程中消费完。其中最重要的一个应用实例就是经典 Web 交互模型中的“一个请求对应一个服务器线程”（Thread-per-Request）的处理方式，这种处理方式的广泛应用使得很多 Web 服务端应用都可以使用线程本地存储来解决线程安全问题。
+
+ThreadLocal叫做***线程变量***，意思是ThreadLocal中填充的变量属于当前线程，该变量对其他线程而言是隔离的，也就是说该变量是当前线程独有的变量。ThreadLocal为变量在每个线程中都创建了一个副本，那么每个线程可以访问自己内部的副本变量。
 
 可以使用 java.lang.ThreadLocal 类来实现线程本地存储功能。
 
