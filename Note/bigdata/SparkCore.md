@@ -311,7 +311,7 @@ val dataRDD1:RDD[Array[Int]] = dataRDD.glom()
 
 6）groupBy
 
-函数说明：将数据根据指定的规则进行分组，分区数量默认不变，但是数据会被打乱重新组合，我们将这样的操作成为**shuffle**。极限情况下数据可能被分在同一个分区中。
+函数说明：将数据根据指定的规则进行分组，分区数量默认不变，但是数据会被打乱重新组合，我们将这样的操作称为**shuffle**。极限情况下数据可能被分在同一个分区中。
 
 ```scala
 def groupBy[K](f:T => K)(implicit kt:ClassTag[K]): RDD[(K,Iterable[T])]

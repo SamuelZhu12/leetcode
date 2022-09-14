@@ -416,7 +416,7 @@ class Solution(object):
 ```python
 ## 时间复杂度：基于随机选取主元的快速排序时间复杂度为期望 O(nlogn)，其中 n为数组的长度。详细证明过程可以见《算法导论》第七章，这里不再大篇幅赘述。
 
-## 空间复杂度：O(h)O(h)，其中 hh 为快速排序递归调用的层数。我们需要额外的 O(h)O(h) 的递归调用的栈空间，由于划分的结果不同导致了快速排序递归调用的层数也会不同，最坏情况下需 O(n)O(n) 的空间，最优情况下每次都平衡，此时整个递归树高度为nlogn，空间复杂度为O(logn)。
+## 空间复杂度：O(n)，其中n为快速排序递归调用的层数。我们需要额外的O(n)的递归调用的栈空间，由于划分的结果不同导致了快速排序递归调用的层数也会不同，最坏情况下需 O(n)O(n) 的空间，最优情况下每次都平衡，此时整个递归树高度为nlogn，空间复杂度为O(logn)。
 
 class Solution(object):
     def sortArray(self, nums):
@@ -2296,7 +2296,31 @@ class Solution(object):
         return dp[m][n]
 ```
 
+## 最长重复子数组
 
+#### https://leetcode.cn/problems/maximum-length-of-repeated-subarray
+
+```PYTHON
+class Solution(object):
+    def findLength(self, nums1, nums2):
+        res = 0
+        dp = [[0]*(len(nums2)+1)]*(len(nums1)+1) # dp初始化为0
+        for i in range(1,len(nums1)+1):  # 注意nums下标和dp下标的关系
+            for j in range(1,len(nums2)+1):
+                if nums2[j-1] == nums1[i-1]:
+                    dp[i][j] = dp[i-1][j-1] + 1 # 判断前面的子数组是不是公共子数组，如果是则+1，如果不是，则前面的dp为0，从这里开始记为1
+                res = max(res,dp[i][j]) # 要将最长的公共子数组记录下来
+        return res
+###    
+    1   0   0   1   1
+1   1   0   0   1   1
+0   0   2   1   0   0
+0   0   1   3   0   0
+0   0   1   2   0   0
+1   1   0   0   3   1
+###
+# 比如100和10，明明有公共子数组10，当时遍历到1000和100的时候，由于100和10并不是公共子数组，所以此时dp = 1
+```
 
 
 
