@@ -66,8 +66,6 @@ HDFS提供了数据复制机制，将每一个文件存储为一系列Block，�
 5. 由末端DataNode向回传输应答成功信息；
 6. FsDataOutputStream向前传输数据Packet。
 
-
-
 ### 1.4 Secondary NameNode
 
 NameNode主要是用来保存HDFS的元数据信息，比如命名空间信息，块信息等。当它运行的时候，这些信息是存在内存中的。但是这些信息也可以持久化到磁盘上。

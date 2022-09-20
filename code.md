@@ -2373,3 +2373,34 @@ class Solution(object):
         return count*4 - 2*edge # 每相邻一个岛屿，就会减少两条边
 ```
 
+# BFS
+
+## 单词接龙
+
+https://leetcode.cn/problems/word-ladder/
+
+```PYTHON
+# 将单词看作图中的结点，使用BFS
+class Solution(object):
+    def ladderLength(self, beginWord, endWord, wordList):
+        if not beginWord or endWord not in wordList:
+            return 0
+        wordSet = set(wordList) # 将wordlist转换成集合，也就是未遍历的点
+        if beginWord in wordSet: # 如果wordlist中含有beginword，则将其去掉
+            wordSet.remove(beginWord)
+        from collections import deque
+        wordQue = deque() # 定义wordQue来存放某一level的所有单词节点
+        wordQue.append((beginWord,1)) # 将beginword作为第一个节点插入，此时level = 1
+        while wordQue: # 开始遍历某一层的节点
+            word,level = wordQue.popleft() 
+            if word == endWord: # 如果这一层的这个节点是endword，则返回层数（距离）
+                return level
+            for i in range(len(word)): # 根据本层节点搜索下一层的节点
+                for j in 'abcdefghijklmnopqrstuvwxyz':
+                    newWord = word[:i] + j + word[i+1:] # 拼接出节点的每个位置替换成其他字母的单词
+                    if newWord in wordSet: # 如果这个单词在wordlist中
+                        wordSet.remove(newWord) # 在wordlist中删除这个单词，并将其加入到wordQue，计算它的下一个节点
+                        wordQue.append((newWord,level+1))
+        return 0
+```
+
